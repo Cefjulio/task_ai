@@ -7,23 +7,37 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build outputs
+dist/
+dist-ssr/
 *.local
+.vite/
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+Thumbs.db
+desktop.ini
 
-# VGO
+# Environment variables
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# VGO / AI Tooling
 .gemini/
 .agents/
 .agent/
@@ -33,3 +47,9 @@ brain/
 implementation_plan.md
 task.md
 walkthrough.md
+
+# Testing
+coverage/
+
+# Misc
+*.tsbuildinfo

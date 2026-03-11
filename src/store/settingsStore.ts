@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { localStorageService } from '@/services/storage/localStorageService';
+import { supabaseService } from '@/services/storage/supabaseService';
 
 interface SettingsState {
     theme: 'light' | 'dark';
@@ -31,7 +31,7 @@ export const useSettingsStore = create<SettingsState>()(
         }),
         {
             name: 'todo-ai-settings',
-            storage: createJSONStorage(() => localStorageService as any),
+            storage: createJSONStorage(() => supabaseService as any),
         }
     )
 );

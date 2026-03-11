@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Task, SubStep, TaskStatus } from '@/types/Task';
-import { localStorageService } from '@/services/storage/localStorageService';
+import { supabaseService } from '@/services/storage/supabaseService';
 import { v4 as uuidv4 } from 'uuid';
 
 interface TaskState {
@@ -118,7 +118,7 @@ export const useTaskStore = create<TaskState>()(
         }),
         {
             name: 'todo-ai-storage', // local storage key
-            storage: createJSONStorage(() => localStorageService as any),
+            storage: createJSONStorage(() => supabaseService as any),
             partialize: (state) => ({
                 tasks: state.tasks,
                 lastOpenedDate: state.lastOpenedDate
