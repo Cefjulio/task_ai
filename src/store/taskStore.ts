@@ -27,7 +27,7 @@ interface TaskState {
 
 export const useTaskStore = create<TaskState>()(
     persist(
-        (set, get) => ({
+        (set) => ({
             tasks: [],
             lastOpenedDate: new Date().toISOString().split('T')[0],
             selectedDate: new Date().toISOString().split('T')[0],

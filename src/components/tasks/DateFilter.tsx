@@ -38,8 +38,8 @@ export const DateFilter: React.FC = () => {
             }
         } else {
             // Fallback for older browsers
-            dateInputRef.current?.focus();
-            dateInputRef.current?.click();
+            (dateInputRef.current as any)?.focus();
+            (dateInputRef.current as any)?.click();
         }
     };
 
