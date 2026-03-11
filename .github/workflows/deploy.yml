@@ -20,11 +20,16 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 24          # Updated to 24 to avoid future deprecation warnings
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Create .env file for Vite
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
 
       - name: Build
         run: npm run build
