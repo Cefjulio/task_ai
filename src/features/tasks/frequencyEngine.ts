@@ -6,6 +6,15 @@ import { differenceInDays, differenceInWeeks, startOfWeek, getDay } from 'date-f
  * Unfinished tasks from the previous day are considered skipped (their stats tracked).
  * Then they are reset to 'pending' for the new day if they are due.
  */
+/**
+ * Parses a YYYY-MM-DD string into a local Date object set at midnight.
+ * This avoids the one-day shift common with new Date(dateStr).
+ */
+const parseLocalDate = (dateStr: string): Date => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+};
+
 export const processDailyTasks = (
     tasks: Task[],
     lastOpenedDateStr: string,
@@ -40,9 +49,9 @@ export const isTaskDueOn = (task: Task, dateStr: string): boolean => {
     // Only primary recurrent tasks are subject to frequency generation
     if (task.priority !== 'primary' || !task.frequency) return true;
 
-    const current = new Date(dateStr);
+    const current = parseLocalDate(dateStr);
     const createdAtStr = new Date(task.createdAt).toLocaleDateString('en-CA');
-    const createdAt = new Date(createdAtStr);
+    const createdAt = parseLocalDate(createdAtStr);
 
     if (current < createdAt) return false;
 
