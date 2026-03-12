@@ -29,8 +29,8 @@ export const useTaskStore = create<TaskState>()(
     persist(
         (set) => ({
             tasks: [],
-            lastOpenedDate: new Date().toISOString().split('T')[0],
-            selectedDate: new Date().toISOString().split('T')[0],
+            lastOpenedDate: new Date().toLocaleDateString('en-CA'),
+            selectedDate: new Date().toLocaleDateString('en-CA'),
 
             addTask: (taskData) => {
                 const isDynamicPriority = ['primary', 'secondary', 'tertiary'].includes(taskData.priority);
