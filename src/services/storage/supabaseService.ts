@@ -22,7 +22,22 @@ export const supabaseService: IStorageService = {
 
                 return {
                     state: {
-                        tasks: tasks || [],
+                        tasks: (tasks || []).map((t: any) => ({
+                            id: t.id,
+                            title: t.title,
+                            description: t.description,
+                            priority: t.priority,
+                            status: t.status,
+                            subSteps: t.sub_steps || [],
+                            category: t.category,
+                            frequency: t.frequency,
+                            frequencyInterval: t.frequency_interval,
+                            weekDays: t.week_days,
+                            weekInterval: t.week_interval,
+                            completions: t.completions,
+                            createdAt: t.created_at,
+                            lastQueuedAt: t.last_queued_at
+                        })),
                         lastOpenedDate: settings?.last_opened_date || new Date().toISOString().split('T')[0]
                     },
                     version: 0
