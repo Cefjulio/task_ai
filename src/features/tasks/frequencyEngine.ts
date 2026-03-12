@@ -41,7 +41,8 @@ export const isTaskDueOn = (task: Task, dateStr: string): boolean => {
     if (task.priority !== 'primary' || !task.frequency) return true;
 
     const current = new Date(dateStr);
-    const createdAt = new Date(task.createdAt.split('T')[0]);
+    const createdAtStr = new Date(task.createdAt).toLocaleDateString('en-CA');
+    const createdAt = new Date(createdAtStr);
 
     if (current < createdAt) return false;
 
@@ -50,7 +51,6 @@ export const isTaskDueOn = (task: Task, dateStr: string): boolean => {
     }
 
     if (task.frequency === 'every_x_days' && task.frequencyInterval) {
-        const createdAt = new Date(task.createdAt);
         const totalDaysSinceCreation = differenceInDays(current, createdAt);
         return totalDaysSinceCreation >= 0 && totalDaysSinceCreation % task.frequencyInterval === 0;
     }
@@ -58,7 +58,7 @@ export const isTaskDueOn = (task: Task, dateStr: string): boolean => {
     if (task.frequency === 'weekly' && task.weekDays && task.weekDays.length > 0) {
         const todayDayIndex = getDay(current);
         if (task.weekDays.includes(todayDayIndex)) {
-            const startOfCreationWeek = startOfWeek(new Date(task.createdAt), { weekStartsOn: 0 });
+            const startOfCreationWeek = startOfWeek(createdAt, { weekStartsOn: 0 });
             const startOfCurrentWeek = startOfWeek(current, { weekStartsOn: 0 });
             const weeksPassed = differenceInWeeks(startOfCurrentWeek, startOfCreationWeek);
 

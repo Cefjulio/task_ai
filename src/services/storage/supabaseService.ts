@@ -72,6 +72,22 @@ export const supabaseService: IStorageService = {
             const { state } = value;
 
             if (name === 'todo-ai-storage') {
+                const incomingIds = state.tasks.map((t: any) => t.id);
+
+                // 1. Delete tasks from Supabase that are NOT in the incoming state
+                // This is necessary because Zustand's persist doesn't tell us what was removed
+                const { data: existingTasks } = await supabase.from('tasks').select('id');
+                if (existingTasks) {
+                    const existingIds = existingTasks.map(t => t.id);
+                    const idsToDelete = existingIds.filter(id => !incomingIds.includes(id));
+                    
+                    if (idsToDelete.length > 0) {
+                        const { error: deleteError } = await supabase.from('tasks').delete().in('id', idsToDelete);
+                        if (deleteError) console.error('Error deleting orphaned tasks:', deleteError);
+                    }
+                }
+
+                // 2. Upsert the current tasks
                 if (state.tasks && state.tasks.length > 0) {
                     const { error } = await supabase.from('tasks').upsert(
                         state.tasks.map((t: any) => ({
