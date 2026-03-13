@@ -5,37 +5,33 @@ import { Task } from '@/types/Task';
 import { motion, AnimatePresence } from 'framer-motion';
 import { computeVisibleQueue } from '@/features/tasks/taskQueue';
 import { List, LayoutGrid, CheckCircle2 } from 'lucide-react';
+import { SearchInput } from '@/components/ui/SearchInput';
 
 type RandomSubTab = 'queue' | 'all' | 'done';
 
 export const RandomTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEdit }) => {
     const { tasks } = useTasks();
     const [subTab, setSubTab] = useState<RandomSubTab>('all');
+    const [searchQuery, setSearchQuery] = useState('');
 
-    // Filter by category and date
-    // For random tasks, we show them if they were created on or before the selected date
+    // Filter by category and search
     const randomTasksAvailable = tasks.filter(t => {
         const category = t.category || (t.priority === 'primary' ? 'dynamic' : 'random');
-        return category === 'random';
+        const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase());
+        return category === 'random' && matchesSearch;
     });
 
     const { visibleSecondary, visibleTertiary } = computeVisibleQueue(randomTasksAvailable);
     const queueTasks = [...visibleSecondary, ...visibleTertiary];
 
     const allRandomTasks = [...randomTasksAvailable].sort((a, b) => {
-        // 1. Move Done tasks to the bottom
+        // ... sort logic remains the same ...
         if (a.status === 'done' && b.status !== 'done') return 1;
         if (b.status === 'done' && a.status !== 'done') return -1;
-
-        // 2. Both are same status (either both pending or both done)
-        // Group by priority: High (3) -> Middle (2) -> Low (1)
         const priorityScore = { high: 3, middle: 2, low: 1, primary: 0, secondary: 0, tertiary: 0 };
         const scoreA = priorityScore[a.priority as keyof typeof priorityScore] || 0;
         const scoreB = priorityScore[b.priority as keyof typeof priorityScore] || 0;
-
         if (scoreA !== scoreB) return scoreB - scoreA;
-
-        // 3. Same priority: Oldest first (Ascending date)
         return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
@@ -49,25 +45,31 @@ export const RandomTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEdi
 
     return (
         <div className="space-y-6 pb-10">
-            {/* Sub-Tabs Navigation */}
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-2xl w-fit mx-auto sm:mx-0 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
-                {tabs.map(tab => {
-                    const Icon = tab.icon;
-                    const isActive = subTab === tab.id;
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setSubTab(tab.id as RandomSubTab)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${isActive
-                                ? 'bg-white dark:bg-slate-700 text-primary shadow-sm scale-105'
-                                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-                                }`}
-                        >
-                            <Icon className={`w-4 h-4 ${isActive ? 'text-primary' : 'opacity-50'}`} />
-                            <span className="hidden sm:block">{tab.label}</span>
-                        </button>
-                    );
-                })}
+            {/* Sub-Tabs Navigation & Search */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-2xl w-fit shadow-sm border border-slate-200/50 dark:border-slate-700/50">
+                    {tabs.map(tab => {
+                        const Icon = tab.icon;
+                        const isActive = subTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setSubTab(tab.id as RandomSubTab)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${isActive
+                                    ? 'bg-white dark:bg-slate-700 text-primary shadow-sm scale-105'
+                                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                                    }`}
+                            >
+                                <Icon className={`w-4 h-4 ${isActive ? 'text-primary' : 'opacity-50'}`} />
+                                <span className="hidden sm:block">{tab.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className="w-full md:max-w-xs">
+                    <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Filter random tasks..." />
+                </div>
             </div>
 
             <div className="min-h-[400px]">

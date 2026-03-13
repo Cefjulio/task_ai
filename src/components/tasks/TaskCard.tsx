@@ -48,13 +48,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit }) => {
 
     return (
         <>
-            <Card className={`relative group p-5 md:p-6 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:hover:shadow-none hover:-translate-y-1 border flex flex-col h-[200px] w-full overflow-hidden ${isCompleted ? 'bg-gradient-to-br from-[#FFD700]/35 via-[#FFB300]/35 to-[#FF8F00]/35 border-amber-400/50 dark:from-yellow-600/35 dark:via-orange-600/35 dark:to-orange-700/35 dark:border-yellow-500/50 shadow-yellow-500/10' : 'bg-white dark:bg-slate-900 border-slate-200/60 dark:border-slate-800/60 shadow-sm'}`}>
+            <Card className={`relative group p-5 md:p-6 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:hover:shadow-none hover:-translate-y-1 border flex flex-col min-h-[180px] h-auto w-full ${isCompleted ? 'bg-gradient-to-br from-[#FFD700]/35 via-[#FFB300]/35 to-[#FF8F00]/35 border-amber-400/50 dark:from-yellow-600/35 dark:via-orange-600/35 dark:to-orange-700/35 dark:border-yellow-500/50 shadow-yellow-500/10' : 'bg-white dark:bg-slate-900 border-slate-200/60 dark:border-slate-800/60 shadow-sm'}`}>
                 <div
-                    className="cursor-pointer flex-1 overflow-hidden flex flex-col"
+                    className="cursor-pointer flex-1 flex flex-col"
                     onClick={() => setIsDetailsOpen(true)}
                 >
                     <div className="flex justify-between items-start gap-4 mb-2 shrink-0">
-                        <h3 className={`font-bold text-xl leading-tight tracking-tight truncate ${isCompleted ? 'line-through text-amber-950 dark:text-yellow-100 opacity-90' : 'text-slate-800 dark:text-slate-100'}`}>
+                        <h3 className={`font-bold text-xl leading-tight tracking-tight line-clamp-2 flex-1 ${isCompleted ? 'line-through text-amber-950 dark:text-yellow-100 opacity-90' : 'text-slate-800 dark:text-slate-100'}`}>
                             {task.title}
                         </h3>
                         <div onClick={e => e.stopPropagation()} className="shrink-0">

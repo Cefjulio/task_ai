@@ -7,15 +7,18 @@ import { Task } from '@/types/Task';
 import { motion } from 'framer-motion';
 import { useTaskStore } from '@/store/taskStore';
 import { isTaskDueOn } from '@/features/tasks/frequencyEngine';
+import { SearchInput } from '@/components/ui/SearchInput';
 
 export const DynamicTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEdit }) => {
     const { tasks } = useTasks();
     const { selectedDate } = useTaskStore();
+    const [searchQuery, setSearchQuery] = React.useState('');
 
     const dynamicTasksForDate = tasks.filter(t => {
         const isDynamicPriority = ['primary', 'secondary', 'tertiary'].includes(t.priority);
         const category = t.category || (isDynamicPriority ? 'dynamic' : 'random');
-        return category === 'dynamic' && isTaskDueOn(t, selectedDate);
+        const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase());
+        return category === 'dynamic' && isTaskDueOn(t, selectedDate) && matchesSearch;
     });
 
     const dailyCoreTasks = dynamicTasksForDate.filter(t => t.priority === 'primary');
@@ -23,19 +26,24 @@ export const DynamicTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEd
     const donePrimary = dailyCoreTasks.filter(t => t.status === 'done');
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-320px)] min-h-[500px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:h-[calc(100vh-320px)] min-h-[500px]">
             <section className="flex flex-col h-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 overflow-hidden shadow-sm">
-                <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-800/30">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50">Daily Core</h2>
-                    <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
-                        {donePrimary.length}/{dailyCoreTasks.length}
-                    </span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 gap-4 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-800/30">
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50 whitespace-nowrap">Daily Core</h2>
+                        <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                            {donePrimary.length}/{dailyCoreTasks.length}
+                        </span>
+                    </div>
+                    <SearchInput value={searchQuery} onChange={setSearchQuery} />
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
                     {dailyCoreTasks.length === 0 ? (
                         <div className="text-center py-12 px-6 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl h-full flex flex-col justify-center">
-                            <p className="text-slate-500 dark:text-slate-400 font-medium">No core tasks scheduled for this day.</p>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium">
+                                {searchQuery ? 'No tasks match your search.' : 'No core tasks scheduled for this day.'}
+                            </p>
                         </div>
                     ) : (
                         <motion.div layout className="flex flex-col w-full gap-4">
