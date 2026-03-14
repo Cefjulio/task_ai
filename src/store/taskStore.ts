@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Task, SubStep, TaskStatus } from '@/types/Task';
 import { supabaseService } from '@/services/storage/supabaseService';
+import { supabase } from '@/services/supabase/supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
 
 interface TaskState {
@@ -52,10 +53,17 @@ export const useTaskStore = create<TaskState>()(
                 }));
             },
 
-            deleteTask: (id) => {
+            deleteTask: async (id) => {
+                // Instantly remove from local state for snappy UI
                 set((state) => ({
                     tasks: state.tasks.filter((t) => t.id !== id),
                 }));
+
+                // Explicitly delete from Supabase so it's gone for good across all devices
+                const { error } = await supabase.from('tasks').delete().eq('id', id);
+                if (error) {
+                    console.error('Error explicitly deleting task from Supabase:', error);
+                }
             },
 
             markTaskStatus: (id, status) => {

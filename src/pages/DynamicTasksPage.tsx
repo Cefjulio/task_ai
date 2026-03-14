@@ -26,8 +26,8 @@ export const DynamicTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEd
     const donePrimary = dailyCoreTasks.filter(t => t.status === 'done');
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:h-[calc(100vh-320px)] min-h-[500px]">
-            <section className="flex flex-col h-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 overflow-hidden shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:h-[calc(100vh-320px)]">
+            <section className="flex flex-col h-[500px] lg:h-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 overflow-hidden shadow-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 gap-4 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-800/30">
                     <div className="flex items-center gap-3">
                         <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50 whitespace-nowrap">Daily Core</h2>
@@ -72,7 +72,7 @@ export const DynamicTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEd
                 </div>
             </section>
 
-            <section className="flex flex-col h-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm overflow-hidden">
+            <section className="flex flex-col h-[500px] lg:h-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm overflow-hidden">
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                     <TaskQueue onEdit={onEdit} category="dynamic" />
                 </div>

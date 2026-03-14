@@ -7,9 +7,6 @@ import { IStorageService } from './storageInterface';
  */
 const SETTINGS_SINGLETON_ID = '00000000-0000-0000-0000-000000000001';
 
-// Hydration Guard: Prevents setItem from wiping the database before getItem has finished.
-let isHydrated = false;
-
 export const supabaseService: IStorageService = {
     getItem: async (name: string) => {
         try {
@@ -23,7 +20,6 @@ export const supabaseService: IStorageService = {
                     return null;
                 }
 
-                isHydrated = true;
                 return {
                     state: {
                         tasks: (tasks || []).map((t: any) => ({
@@ -76,22 +72,9 @@ export const supabaseService: IStorageService = {
             const { state } = value;
 
             if (name === 'todo-ai-storage') {
-                const incomingIds = state.tasks.map((t: any) => t.id);
-
-                // 1. Delete tasks from Supabase that are NOT in the incoming state
-                // Safety Guard: Only delete if were are hydrated to prevent wiping JS state before it's loaded.
-                if (isHydrated) {
-                    const { data: existingTasks } = await supabase.from('tasks').select('id');
-                    if (existingTasks) {
-                        const existingIds = existingTasks.map(t => t.id);
-                        const idsToDelete = existingIds.filter(id => !incomingIds.includes(id));
-                        
-                        if (idsToDelete.length > 0) {
-                            const { error: deleteError } = await supabase.from('tasks').delete().in('id', idsToDelete);
-                            if (deleteError) console.error('Error deleting orphaned tasks:', deleteError);
-                        }
-                    }
-                }
+                // 1. We no longer actively delete orphaned tasks here.
+                // This prevents a stale local tab from wiping out tasks created on another device.
+                // Deletions are now handled explicitly in the store's `deleteTask` action.
 
                 // 2. Upsert the current tasks
                 if (state.tasks && state.tasks.length > 0) {
