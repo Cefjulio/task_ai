@@ -108,6 +108,7 @@ export const useTaskStore = create<TaskState>()(
                     status: 'pending',
                     completions: 0,
                     category: taskData.category || (isDynamicPriority ? 'dynamic' : 'random'),
+                    history: [],
                 } as Task;
                 set((state) => ({ tasks: [...state.tasks, newTask] }));
             },
@@ -134,13 +135,32 @@ export const useTaskStore = create<TaskState>()(
             markTaskStatus: (id, status) => {
                 set((state) => {
                     const now = new Date().toISOString();
+                    const currentDate = state.selectedDate;
+                    
                     return {
                         tasks: state.tasks.map((t) => {
                             if (t.id !== id) return t;
                             const isQueuePriority = ['secondary', 'tertiary', 'high', 'middle', 'low'].includes(t.priority);
+                            
+                            // Manage History Array
+                            const currentHistory = t.history || [];
+                            const existingDateIndex = currentHistory.findIndex(h => h.date === currentDate);
+                            let newHistory = [...currentHistory];
+                            
+                            if (existingDateIndex >= 0) {
+                                newHistory[existingDateIndex] = { date: currentDate, status };
+                            } else {
+                                newHistory.push({ date: currentDate, status });
+                            }
+
+                            // Only update base status for primary tasks if they are being marked on today's true date
+                            // (or just rely entirely on history for primary tasks)
+                            const newBaseStatus = t.priority === 'primary' ? t.status : status;
+
                             return {
                                 ...t,
-                                status,
+                                status: newBaseStatus, // Keep base status intact for primary to avoid global overwrites
+                                history: newHistory,
                                 completions: status === 'done' ? t.completions + 1 : t.completions,
                                 lastQueuedAt: isQueuePriority && (status === 'done' || status === 'skipped') ? now : t.lastQueuedAt
                             };

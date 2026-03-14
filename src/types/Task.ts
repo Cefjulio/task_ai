@@ -23,4 +23,5 @@ export interface Task {
     completions: number;
     category: 'dynamic' | 'random';
     lastQueuedAt?: string; // ISO string for rotation
+    history?: { date: string; status: TaskStatus }[]; // ISO strings of dates (YYYY-MM-DD)
 }

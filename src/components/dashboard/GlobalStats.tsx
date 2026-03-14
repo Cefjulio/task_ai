@@ -25,7 +25,7 @@ export const GlobalStats: React.FC<{ activeTab: 'dynamic' | 'random' }> = ({ act
         ? dailyQueueSession.taskIds
         : undefined;
 
-    const stats = calculateStats(filteredTasks, sessionTaskIds);
+    const stats = calculateStats(filteredTasks, selectedDate, sessionTaskIds);
     // Use "Today" for dynamic (calendar-based), omit for random (backlog-based)
     const domainLabel = activeTab === 'dynamic' ? 'Daily Core Today' : 'Random Tasks Backlog';
 

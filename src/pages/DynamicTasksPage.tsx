@@ -7,6 +7,7 @@ import { Task } from '@/types/Task';
 import { motion } from 'framer-motion';
 import { useTaskStore } from '@/store/taskStore';
 import { isTaskDueOn } from '@/features/tasks/frequencyEngine';
+import { getTaskStatusForDate } from '@/utils/taskHelpers';
 import { SearchInput } from '@/components/ui/SearchInput';
 
 export const DynamicTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEdit }) => {
@@ -22,8 +23,8 @@ export const DynamicTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEd
     });
 
     const dailyCoreTasks = dynamicTasksForDate.filter(t => t.priority === 'primary');
-    const pendingPrimary = dailyCoreTasks.filter(t => t.status === 'pending');
-    const donePrimary = dailyCoreTasks.filter(t => t.status === 'done');
+    const pendingPrimary = dailyCoreTasks.filter(t => getTaskStatusForDate(t, selectedDate) === 'pending');
+    const donePrimary = dailyCoreTasks.filter(t => getTaskStatusForDate(t, selectedDate) === 'done');
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:h-[calc(100vh-320px)]">

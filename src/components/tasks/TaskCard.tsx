@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Task } from '@/types/Task';
-import { getTaskProgress, getTaskStepStats } from '@/utils/taskHelpers';
+import { getTaskProgress, getTaskStepStats, getTaskStatusForDate } from '@/utils/taskHelpers';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { TaskActions } from './TaskActions';
 import { useTasks } from '@/hooks/useTasks';
+import { useTaskStore } from '@/store/taskStore';
 import { triggerConfetti, playApplause } from '@/utils/soundEffects';
 import toast from 'react-hot-toast';
 import { TaskDetailsModal } from './TaskDetailsModal';
@@ -17,11 +18,13 @@ interface TaskCardProps {
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit }) => {
     const { markTaskStatus, deleteTask } = useTasks();
+    const { selectedDate } = useTaskStore();
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
     const progress = getTaskProgress(task);
     const stats = getTaskStepStats(task);
-    const isCompleted = task.status === 'done';
+    const currentStatus = getTaskStatusForDate(task, selectedDate);
+    const isCompleted = currentStatus === 'done';
 
     const handleDone = () => {
         markTaskStatus(task.id, 'done');
