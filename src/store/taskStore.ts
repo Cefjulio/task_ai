@@ -20,6 +20,10 @@ interface TaskState {
     toggleSubStep: (taskId: string, stepId: string) => void;
     deleteSubStep: (taskId: string, stepId: string) => void;
 
+    // Queue actions
+    dailyQueueSession: { date: string, taskIds: string[] } | null;
+    generateQueueSession: (forceRefresh: boolean, currentDate: string) => void;
+
     // Utility actions
     setSelectedDate: (date: string) => void;
     setLastOpenedDate: (dateStr: string) => void;
@@ -32,6 +36,67 @@ export const useTaskStore = create<TaskState>()(
             tasks: [],
             lastOpenedDate: new Date().toLocaleDateString('en-CA'),
             selectedDate: new Date().toLocaleDateString('en-CA'),
+            dailyQueueSession: null,
+
+            generateQueueSession: (forceRefresh, currentDate) => {
+                set((state) => {
+                    // Only generate a new session if forced, or if the stored session is from a different day
+                    if (!forceRefresh && state.dailyQueueSession?.date === currentDate) {
+                        return state; // Session is still valid
+                    }
+
+                    // 1. Gather all dynamic tasks eligible for the queue
+                    const dynamicTasks = state.tasks.filter(t => {
+                        const isDynamic = ['primary', 'secondary', 'tertiary'].includes(t.priority);
+                        const cat = t.category || (isDynamic ? 'dynamic' : 'random');
+                        return cat === 'dynamic';
+                    });
+
+                    // 2. Separate into active secondary and tertiary pools
+                    const secondaryPool = dynamicTasks.filter(t => t.priority === 'secondary' || t.priority === 'high');
+                    const tertiaryPool = dynamicTasks.filter(t => t.priority === 'tertiary' || t.priority === 'middle' || t.priority === 'low');
+
+                    // 3. Sort by priority (fewest completions first, then oldest)
+                    const sortQueueList = (list: Task[]) => {
+                        list.sort((a, b) => {
+                            if (a.completions === b.completions) {
+                                const timeA = new Date(a.lastQueuedAt || a.createdAt).getTime();
+                                const timeB = new Date(b.lastQueuedAt || b.createdAt).getTime();
+                                return timeA - timeB;
+                            }
+                            return a.completions - b.completions;
+                        });
+                    };
+
+                    sortQueueList(secondaryPool);
+                    sortQueueList(tertiaryPool);
+
+                    // 4. Pick top 2 secondary, top 1 tertiary for the new session
+                    const newSessionIds = [
+                        ...secondaryPool.slice(0, 2).map(t => t.id),
+                        ...tertiaryPool.slice(0, 1).map(t => t.id)
+                    ];
+
+                    // 5. Reset status of picked tasks to 'pending' if they were 'done' or 'skipped'
+                    // This creates the rotation effect where previously completed tasks become available again.
+                    const updatedTasks = state.tasks.map(t => {
+                        if (newSessionIds.includes(t.id) && t.status !== 'pending') {
+                            return { ...t, status: 'pending' as TaskStatus }; // Explicit case for TS
+                        }
+                        return t;
+                    });
+
+                    return {
+                        ...state,
+                        tasks: updatedTasks,
+                        dailyQueueSession: {
+                            date: currentDate,
+                            taskIds: newSessionIds
+                        }
+                    };
+                });
+            },
+
 
             addTask: (taskData) => {
                 const isDynamicPriority = ['primary', 'secondary', 'tertiary'].includes(taskData.priority);
@@ -129,7 +194,8 @@ export const useTaskStore = create<TaskState>()(
             storage: supabaseService as any,
             partialize: (state) => ({
                 tasks: state.tasks,
-                lastOpenedDate: state.lastOpenedDate
+                lastOpenedDate: state.lastOpenedDate,
+                dailyQueueSession: state.dailyQueueSession
             }), // Do NOT persist selectedDate
         }
     )

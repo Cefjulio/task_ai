@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { isTaskDueOn } from '@/features/tasks/frequencyEngine';
 
 export const GlobalStats: React.FC<{ activeTab: 'dynamic' | 'random' }> = ({ activeTab }) => {
-    const { tasks, selectedDate } = useTaskStore();
+    const { tasks, selectedDate, dailyQueueSession } = useTaskStore();
 
     // Filter tasks based on current tab's domain and date
     const filteredTasks = tasks.filter(t => {
@@ -21,7 +21,11 @@ export const GlobalStats: React.FC<{ activeTab: 'dynamic' | 'random' }> = ({ act
         return true;
     });
 
-    const stats = calculateStats(filteredTasks);
+    const sessionTaskIds = activeTab === 'dynamic' && dailyQueueSession?.date === selectedDate
+        ? dailyQueueSession.taskIds
+        : undefined;
+
+    const stats = calculateStats(filteredTasks, sessionTaskIds);
     // Use "Today" for dynamic (calendar-based), omit for random (backlog-based)
     const domainLabel = activeTab === 'dynamic' ? 'Daily Core Today' : 'Random Tasks Backlog';
 

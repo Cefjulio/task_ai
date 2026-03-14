@@ -38,7 +38,7 @@ export const computeVisibleQueue = (tasks: Task[]): QueueState => {
     return {
         visibleSecondary: pendingSecondary.slice(0, 2),
         visibleTertiary: pendingTertiary.slice(0, 1),
-        fullSecondary: pendingSecondary,
-        fullTertiary: pendingTertiary,
+        fullSecondary: pendingSecondary.slice(2),
+        fullTertiary: pendingTertiary.slice(1),
     };
 };

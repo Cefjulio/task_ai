@@ -1,10 +1,16 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useTaskStore } from '@/store/taskStore';
 import { computeVisibleQueue, QueueState } from '@/features/tasks/taskQueue';
-import { isTaskDueOn } from '@/features/tasks/frequencyEngine';
 
 export const useQueue = (category: 'dynamic' | 'random' = 'random'): QueueState & { refreshQueue: () => void } => {
-    const { tasks, selectedDate } = useTaskStore();
+    const { tasks, selectedDate, dailyQueueSession, generateQueueSession } = useTaskStore();
+
+    // Ensure the queue session is generated/validated whenever tasks or date change
+    useEffect(() => {
+        if (category === 'dynamic') {
+            generateQueueSession(false, selectedDate);
+        }
+    }, [category, selectedDate, generateQueueSession, tasks.length]); // trigger on length to catch init load
 
     const queue = useMemo(() => {
         const filteredTasks = tasks.filter(t => {
@@ -12,21 +18,62 @@ export const useQueue = (category: 'dynamic' | 'random' = 'random'): QueueState 
             const tCategory = t.category || (isDynamicPriority ? 'dynamic' : 'random');
             if (tCategory !== category) return false;
 
-            // Only apply date filtering for dynamic tasks
-            if (category === 'dynamic') {
-                return isTaskDueOn(t, selectedDate);
-            }
-
-            return true;
+            // Date filtering for dynamic tasks is handled mostly by the queue generator now,
+            // but we still apply it for primary tasks if this hook is ever broad.
+            return true; 
         });
-        return computeVisibleQueue(filteredTasks);
-    }, [tasks, category, selectedDate]);
+
+        const computed = computeVisibleQueue(filteredTasks);
+
+        // If we are looking at dynamic tasks, OVERRIDE the visible queues with our locked session
+        if (category === 'dynamic' && dailyQueueSession?.date === selectedDate) {
+            const sessionTasks = filteredTasks.filter(t => dailyQueueSession.taskIds.includes(t.id));
+            const sessionIds = sessionTasks.map(t => t.id);
+
+            // The backlog should include all tasks NOT in the current session,
+            // PLUS tasks that ARE in the current session but are NO LONGER pending (to show them in the queue backlog immediately).
+            const backlogSecondary = filteredTasks.filter(t => 
+                (t.priority === 'secondary' || t.priority === 'high') && (!sessionIds.includes(t.id) || t.status !== 'pending')
+            );
+            const backlogTertiary = filteredTasks.filter(t => 
+                (t.priority === 'tertiary' || t.priority === 'middle' || t.priority === 'low') && (!sessionIds.includes(t.id) || t.status !== 'pending')
+            );
+
+            const sortByPriority = (list: any[]) => {
+                list.sort((a, b) => {
+                    if (a.completions === b.completions) {
+                        const timeA = new Date(a.lastQueuedAt || a.createdAt).getTime();
+                        const timeB = new Date(b.lastQueuedAt || b.createdAt).getTime();
+                        return timeA - timeB;
+                    }
+                    return a.completions - b.completions;
+                });
+            };
+
+            sortByPriority(backlogSecondary);
+            sortByPriority(backlogTertiary);
+
+            // Visible tasks must STILL BE PENDING to remain in the "Up Next" UI.
+            const visibleSecondary = sessionTasks.filter(t => (t.priority === 'secondary' || t.priority === 'high') && t.status === 'pending');
+            const visibleTertiary = sessionTasks.filter(t => (t.priority === 'tertiary' || t.priority === 'middle' || t.priority === 'low') && t.status === 'pending');
+            sortByPriority(visibleSecondary);
+            sortByPriority(visibleTertiary);
+            
+            return {
+                visibleSecondary,
+                visibleTertiary,
+                fullSecondary: backlogSecondary,
+                fullTertiary: backlogTertiary
+            };
+        }
+
+        return computed;
+    }, [tasks, category, selectedDate, dailyQueueSession]);
 
     const refreshQueue = () => {
-        // In a deterministic queue based on completions, refresh is just re-evaluating.
-        // However, if we want "skip" to send back to queue, we would increment a hidden 
-        // "skipCount" parameter or randomize ties. Since we sort by creation date as well,
-        // we can artificially bump a skipped item's timestamp or completions to cycle it.
+        if (category === 'dynamic') {
+            generateQueueSession(true, selectedDate);
+        }
     };
 
     return {
