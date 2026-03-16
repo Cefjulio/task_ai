@@ -81,12 +81,15 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
             return;
         }
 
-        // Parse sub-steps from multiline text
+        // Parse sub-steps from multiline text, preserving existing status if the text matches
         const parsedSubSteps = subStepsText
             .split('\n')
             .map(t => t.trim())
             .filter(t => t.length > 0)
-            .map(text => ({ id: crypto.randomUUID(), text, status: 'pending' as const }));
+            .map(text => {
+                const existing = taskToEdit?.subSteps.find(s => s.text === text);
+                return existing ? existing : { id: crypto.randomUUID(), text, status: 'pending' as const };
+            });
 
         if (taskToEdit) {
             updateTask(taskToEdit.id, {
@@ -94,6 +97,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
                 description,
                 priority: finalPriority,
                 category,
+                subSteps: parsedSubSteps,
                 frequency: finalPriority === 'primary' ? frequency : undefined,
                 frequencyInterval: finalPriority === 'primary' && frequency === 'every_x_days' ? frequencyInterval : undefined,
                 weekDays: finalPriority === 'primary' && frequency === 'weekly' ? weekDays : undefined,
@@ -244,17 +248,15 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
                         </div>
                     )}
 
-                    {!taskToEdit && (
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Sub-steps <span className="text-slate-400 font-normal">(One per line)</span></label>
-                            <textarea
-                                value={subStepsText}
-                                onChange={e => setSubStepsText(e.target.value)}
-                                className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none h-24 text-sm"
-                                placeholder="Step 1&#10;Step 2&#10;Step 3..."
-                            />
-                        </div>
-                    )}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Sub-steps <span className="text-slate-400 font-normal">(One per line)</span></label>
+                        <textarea
+                            value={subStepsText}
+                            onChange={e => setSubStepsText(e.target.value)}
+                            className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none h-24 text-sm"
+                            placeholder="Step 1&#10;Step 2&#10;Step 3..."
+                        />
+                    </div>
 
                     <div className="pt-4">
                         <Button type="submit" className="w-full">
