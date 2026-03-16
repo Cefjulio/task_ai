@@ -6,7 +6,7 @@ import { getTaskStatusForDate } from '@/utils/taskHelpers';
  * Calculates global stats based on the current task list.
  * Only factors in Primary tasks and the CURRENTLY ACTIVE Secondary/Tertiary queue items.
  */
-export const calculateStats = (tasks: Task[], targetDate: string, sessionTaskIds?: string[]) => {
+export const calculateStats = (tasks: Task[], targetDate: string, sessionTaskIds?: string[], isRandomTab?: boolean) => {
     // 1. Get all primary tasks (these are always "today's tasks")
     const primaryTasks = tasks.filter(t => t.priority === 'primary');
 
@@ -26,12 +26,18 @@ export const calculateStats = (tasks: Task[], targetDate: string, sessionTaskIds
         visibleTertiary = computed.visibleTertiary;
     }
 
-    // 3. Combine them to represent "Today's Active Board"
-    const activeTodayTasks = [
-        ...primaryTasks,
-        ...visibleSecondary,
-        ...visibleTertiary
-    ];
+    let activeTodayTasks: Task[] = [];
+
+    if (isRandomTab) {
+        activeTodayTasks = tasks;
+    } else {
+        // 3. Combine them to represent "Today's Active Board"
+        activeTodayTasks = [
+            ...primaryTasks,
+            ...visibleSecondary,
+            ...visibleTertiary
+        ];
+    }
 
     const totalTasks = activeTodayTasks.length;
 
