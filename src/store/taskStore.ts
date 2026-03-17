@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Task, SubStep, TaskStatus } from '@/types/Task';
+import { Task, SubStep, TaskStatus, Tag } from '@/types/Task';
 import { supabaseService } from '@/services/storage/supabaseService';
 import { supabase } from '@/services/supabase/supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
 
 interface TaskState {
     tasks: Task[];
+    tags: Tag[];
     lastOpenedDate: string;
     selectedDate: string; // ISO string YYYY-MM-DD
     // Core Actions
@@ -19,6 +20,11 @@ interface TaskState {
     addSubStep: (taskId: string, text: string) => void;
     toggleSubStep: (taskId: string, stepId: string) => void;
     deleteSubStep: (taskId: string, stepId: string) => void;
+
+    // Tag actions
+    addTag: (tag: Omit<Tag, 'id'>) => void;
+    updateTag: (id: string, updates: Partial<Tag>) => void;
+    deleteTag: (id: string) => void;
 
     // Queue actions
     dailyQueueSession: { date: string, taskIds: string[] } | null;
@@ -34,6 +40,7 @@ export const useTaskStore = create<TaskState>()(
     persist(
         (set) => ({
             tasks: [],
+            tags: [],
             lastOpenedDate: new Date().toLocaleDateString('en-CA'),
             selectedDate: new Date().toLocaleDateString('en-CA'),
             dailyQueueSession: null,
@@ -109,6 +116,7 @@ export const useTaskStore = create<TaskState>()(
                     completions: 0,
                     category: taskData.category || (isDynamicPriority ? 'dynamic' : 'random'),
                     history: [],
+                    tags: taskData.tags || [],
                 } as Task;
                 set((state) => ({ tasks: [...state.tasks, newTask] }));
             },
@@ -205,6 +213,28 @@ export const useTaskStore = create<TaskState>()(
                 }));
             },
 
+            addTag: (tagData) => {
+                const newTag: Tag = { ...tagData, id: uuidv4() };
+                set((state) => ({ tags: [...state.tags, newTag] }));
+            },
+
+            updateTag: (id, updates) => {
+                set((state) => ({
+                    tags: state.tags.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+                }));
+            },
+
+            deleteTag: (id) => {
+                set((state) => ({
+                    tags: state.tags.filter((t) => t.id !== id),
+                    // Also strictly remove deleted tags from any Tasks that possess them
+                    tasks: state.tasks.map((t) => ({
+                        ...t,
+                        tags: t.tags ? t.tags.filter((tagId) => tagId !== id) : [],
+                    })),
+                }));
+            },
+
             setLastOpenedDate: (dateStr) => set({ lastOpenedDate: dateStr }),
             setSelectedDate: (date) => set({ selectedDate: date }),
             setTasks: (tasks) => set({ tasks }),
@@ -214,6 +244,7 @@ export const useTaskStore = create<TaskState>()(
             storage: supabaseService as any,
             partialize: (state) => ({
                 tasks: state.tasks,
+                tags: state.tags,
                 lastOpenedDate: state.lastOpenedDate,
                 dailyQueueSession: state.dailyQueueSession
             }), // Do NOT persist selectedDate

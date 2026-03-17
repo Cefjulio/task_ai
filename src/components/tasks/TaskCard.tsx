@@ -18,8 +18,10 @@ interface TaskCardProps {
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit }) => {
     const { markTaskStatus, deleteTask } = useTasks();
-    const { selectedDate } = useTaskStore();
+    const { selectedDate, tags: allTags } = useTaskStore();
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+    const taskTags = (task.tags || []).map(tagId => allTags.find(t => t.id === tagId)).filter(Boolean);
 
     const progress = getTaskProgress(task);
     const stats = getTaskStepStats(task);
@@ -60,10 +62,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit }) => {
                         <h3 className={`font-bold text-xl leading-tight tracking-tight line-clamp-2 flex-1 ${isCompleted ? 'line-through text-amber-950 dark:text-yellow-100 opacity-90' : 'text-slate-800 dark:text-slate-100'}`}>
                             {task.title}
                         </h3>
-                        <div onClick={e => e.stopPropagation()} className="shrink-0">
+                        <div onClick={e => e.stopPropagation()} className="shrink-0 flex flex-col items-end gap-2">
                             <Badge variant={task.priority}>
                                 {task.priority}
                             </Badge>
+                            {taskTags.length > 0 && (
+                                <div className="flex gap-1 flex-wrap justify-end max-w-[120px]">
+                                    {taskTags.map(tag => tag && (
+                                        <div 
+                                            key={tag.id} 
+                                            className={`w-2.5 h-2.5 rounded-full ${tag.color} shadow-sm`}
+                                            title={tag.name}
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
 

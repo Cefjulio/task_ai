@@ -8,6 +8,12 @@ export type TaskPriority = 'primary' | 'secondary' | 'tertiary' | 'high' | 'midd
 export type TaskStatus = 'pending' | 'done' | 'skipped';
 export type TaskFrequency = 'daily' | 'every_x_days' | 'weekly';
 
+export interface Tag {
+    id: string;
+    name: string;
+    color: string;
+}
+
 export interface Task {
     id: string;
     title: string;
@@ -24,4 +30,5 @@ export interface Task {
     category: 'dynamic' | 'random';
     lastQueuedAt?: string; // ISO string for rotation
     history?: { date: string; status: TaskStatus }[]; // ISO strings of dates (YYYY-MM-DD)
+    tags?: string[]; // Array of Tag IDs
 }

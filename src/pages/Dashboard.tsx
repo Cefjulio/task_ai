@@ -10,11 +10,13 @@ import { Task } from '@/types/Task';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MotivationalBanner } from '@/components/dashboard/MotivationalBanner';
 import { DateFilter } from '@/components/tasks/DateFilter';
-import { Target, Zap } from 'lucide-react';
+import { Target, Zap, Tags } from 'lucide-react';
+import { ManageTagsModal } from '@/components/tasks/ManageTagsModal';
 
 export const Dashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('dynamic');
     const [isModalOpen, setModalOpen] = useState(false);
+    const [isTagsModalOpen, setTagsModalOpen] = useState(false);
     const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
 
     const handleEdit = (task: Task) => {
@@ -52,6 +54,13 @@ export const Dashboard: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setTagsModalOpen(true)}
+                            className="p-2.5 text-slate-500 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center shrink-0"
+                            title="Manage Tags"
+                        >
+                            <Tags className="w-5 h-5" />
+                        </button>
                         <ThemeToggle />
                         <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
                         <div className="hidden xl:flex items-center gap-3">
@@ -105,6 +114,11 @@ export const Dashboard: React.FC = () => {
                 onClose={() => setModalOpen(false)}
                 taskToEdit={taskToEdit}
                 defaultCategory={currentCategory}
+            />
+
+            <ManageTagsModal
+                isOpen={isTagsModalOpen}
+                onClose={() => setTagsModalOpen(false)}
             />
         </div>
     );

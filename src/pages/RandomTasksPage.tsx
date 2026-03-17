@@ -3,17 +3,20 @@ import { useTasks } from '@/hooks/useTasks';
 import { TaskCard } from '@/components/tasks/TaskCard';
 import { Task } from '@/types/Task';
 import { SearchInput } from '@/components/ui/SearchInput';
+import { TagFilter } from '@/components/tasks/TagFilter';
 import { Sparkles } from 'lucide-react';
 
 export const RandomTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEdit }) => {
     const { tasks } = useTasks();
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
     // Filter by category and search
     const randomTasksAvailable = tasks.filter(t => {
         const category = t.category || (t.priority === 'primary' ? 'dynamic' : 'random');
         const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase());
-        return category === 'random' && matchesSearch;
+        const matchesTags = selectedTags.length === 0 || selectedTags.some(tagId => t.tags?.includes(tagId));
+        return category === 'random' && matchesSearch && matchesTags;
     });
 
     const allRandomTasks = [...randomTasksAvailable].sort((a, b) => {
@@ -28,9 +31,12 @@ export const RandomTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEdi
 
     return (
         <div className="space-y-6 pb-10">
-            {/* Search */}
-            <div className="flex justify-end">
-                <div className="w-full md:max-w-xs">
+            {/* Search and Filter */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex-1 w-full overflow-hidden">
+                    <TagFilter selectedTagIds={selectedTags} onChange={setSelectedTags} />
+                </div>
+                <div className="w-full sm:w-auto sm:max-w-xs shrink-0">
                     <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Filter random tasks..." />
                 </div>
             </div>
