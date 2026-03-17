@@ -10,7 +10,7 @@ export const useQueue = (category: 'dynamic' | 'random' = 'random'): QueueState 
         if (category === 'dynamic') {
             generateQueueSession(false, selectedDate);
         }
-    }, [category, selectedDate, generateQueueSession, tasks]); // React to full task list changes (e.g., initial load)
+    }, [category, selectedDate, generateQueueSession, tasks.length]); // trigger on length to catch init load
 
     const queue = useMemo(() => {
         const filteredTasks = tasks.filter(t => {

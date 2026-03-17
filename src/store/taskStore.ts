@@ -48,20 +48,20 @@ export const useTaskStore = create<TaskState>()(
             generateQueueSession: (forceRefresh, currentDate) => {
                 set((state) => {
                     // Only generate a new session if forced, or if the stored session is from a different day.
-                    // Also regenerate if the current session is empty but we have tasks available.
+                    // Also regenerate if the current session is empty but we have tasks available to fill it.
                     const isNewDay = state.dailyQueueSession?.date !== currentDate;
-                    const isEmptySession = !state.dailyQueueSession?.taskIds || state.dailyQueueSession.taskIds.length === 0;
-                    
-                    if (!forceRefresh && !isNewDay && !isEmptySession) {
-                        return state; // Session is valid and non-empty
-                    }
-
-                    // 1. Gather all dynamic tasks eligible for the queue
                     const dynamicTasks = state.tasks.filter(t => {
                         const isDynamic = ['primary', 'secondary', 'tertiary'].includes(t.priority);
                         const cat = t.category || (isDynamic ? 'dynamic' : 'random');
                         return cat === 'dynamic';
                     });
+                    
+                    const isEmptySession = !state.dailyQueueSession?.taskIds || state.dailyQueueSession.taskIds.length === 0;
+                    const hasTasksToQueue = dynamicTasks.some(t => t.priority !== 'primary');
+
+                    if (!forceRefresh && !isNewDay && (!isEmptySession || !hasTasksToQueue)) {
+                        return state; // Session is valid, or we have nothing new to queue anyway
+                    }
 
                     // 2. Separate into active secondary and tertiary pools
                     const secondaryPool = dynamicTasks.filter(t => t.priority === 'secondary' || t.priority === 'high');
@@ -94,10 +94,21 @@ export const useTaskStore = create<TaskState>()(
                     // This creates the rotation effect where previously completed tasks become available again.
                     const updatedTasks = state.tasks.map(t => {
                         if (newSessionIds.includes(t.id) && t.status !== 'pending') {
-                            return { ...t, status: 'pending' as TaskStatus }; // Explicit case for TS
+                            return { ...t, status: 'pending' as TaskStatus };
                         }
                         return t;
                     });
+
+                    // Avoid unnecessary state updates if nothing actually changed
+                    const tasksChanged = updatedTasks !== state.tasks;
+                    const sessionChanged = 
+                        isNewDay || 
+                        isEmptySession || 
+                        JSON.stringify(state.dailyQueueSession?.taskIds) !== JSON.stringify(newSessionIds);
+
+                    if (!tasksChanged && !sessionChanged) {
+                        return state;
+                    }
 
                     return {
                         ...state,
