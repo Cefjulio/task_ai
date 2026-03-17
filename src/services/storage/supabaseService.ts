@@ -12,16 +12,22 @@ export const supabaseService: IStorageService = {
         try {
             if (name === 'todo-ai-storage') {
                 const { data: tasks, error: taskError } = await supabase.from('tasks').select('*');
+                const { data: tags, error: tagsError } = await supabase.from('tags').select('*');
                 // Use maybeSingle() to avoid 406 error if the table is empty
                 const { data: settings, error: settingsError } = await supabase.from('settings').select('last_opened_date').maybeSingle();
                 
-                if (taskError || settingsError) {
-                    console.error('Error fetching data from Supabase:', { taskError, settingsError });
+                if (taskError || settingsError || tagsError) {
+                    console.error('Error fetching data from Supabase:', { taskError, settingsError, tagsError });
                     return null;
                 }
 
                 return {
                     state: {
+                        tags: (tags || []).map((t: any) => ({
+                            id: t.id,
+                            name: t.name,
+                            color: t.color
+                        })),
                         tasks: (tasks || []).map((t: any) => ({
                             id: t.id,
                             title: t.title,
@@ -36,7 +42,9 @@ export const supabaseService: IStorageService = {
                             weekInterval: t.week_interval,
                             completions: t.completions,
                             createdAt: t.created_at,
-                            lastQueuedAt: t.last_queued_at
+                            lastQueuedAt: t.last_queued_at,
+                            history: t.history || [],
+                            tags: t.tags || []
                         })),
                         lastOpenedDate: settings?.last_opened_date || new Date().toISOString().split('T')[0]
                     },
@@ -93,11 +101,25 @@ export const supabaseService: IStorageService = {
                             week_interval: t.weekInterval,
                             completions: t.completions,
                             created_at: t.createdAt,
-                            last_queued_at: t.lastQueuedAt
+                            last_queued_at: t.lastQueuedAt,
+                            history: t.history || [],
+                            tags: t.tags || []
                         })),
                         { onConflict: 'id' }
                     );
                     if (error) console.error('Error saving tasks to Supabase:', error);
+                }
+
+                if (state.tags && state.tags.length > 0) {
+                    const { error } = await supabase.from('tags').upsert(
+                        state.tags.map((t: any) => ({
+                            id: t.id,
+                            name: t.name,
+                            color: t.color
+                        })),
+                        { onConflict: 'id' }
+                    );
+                    if (error) console.error('Error saving tags to Supabase:', error);
                 }
 
                 if (state.lastOpenedDate) {
@@ -125,6 +147,7 @@ export const supabaseService: IStorageService = {
     removeItem: async (name: string) => {
         if (name === 'todo-ai-storage') {
             await supabase.from('tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            await supabase.from('tags').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         }
         if (name === 'todo-ai-settings') {
             await supabase.from('settings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
