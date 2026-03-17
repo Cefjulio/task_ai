@@ -41,12 +41,14 @@ export const useQueue = (category: 'dynamic' | 'random' = 'random'): QueueState 
 
             const sortByPriority = (list: any[]) => {
                 list.sort((a, b) => {
-                    if (a.completions === b.completions) {
-                        const timeA = new Date(a.lastQueuedAt || a.createdAt).getTime();
-                        const timeB = new Date(b.lastQueuedAt || b.createdAt).getTime();
+                    const compA = a.completions || 0;
+                    const compB = b.completions || 0;
+                    if (compA === compB) {
+                        const timeA = new Date(a.lastQueuedAt || a.createdAt || 0).getTime();
+                        const timeB = new Date(b.lastQueuedAt || b.createdAt || 0).getTime();
                         return timeA - timeB;
                     }
-                    return a.completions - b.completions;
+                    return compA - compB;
                 });
             };
 

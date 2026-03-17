@@ -14,7 +14,7 @@ export const supabaseService: IStorageService = {
                 const { data: tasks, error: taskError } = await supabase.from('tasks').select('*');
                 const { data: tags, error: tagsError } = await supabase.from('tags').select('*');
                 // Use maybeSingle() to avoid 406 error if the table is empty
-                const { data: settings, error: settingsError } = await supabase.from('settings').select('last_opened_date').maybeSingle();
+                const { data: settings, error: settingsError } = await supabase.from('settings').select('last_opened_date, daily_queue_session').maybeSingle();
                 
                 if (taskError || settingsError || tagsError) {
                     console.error('Error fetching data from Supabase:', { taskError, settingsError, tagsError });
@@ -46,7 +46,8 @@ export const supabaseService: IStorageService = {
                             history: t.history || [],
                             tags: t.tags || []
                         })),
-                        lastOpenedDate: settings?.last_opened_date || new Date().toISOString().split('T')[0]
+                        lastOpenedDate: settings?.last_opened_date || new Date().toISOString().split('T')[0],
+                        dailyQueueSession: settings?.daily_queue_session || null
                     },
                     version: 0
                 };
@@ -122,10 +123,11 @@ export const supabaseService: IStorageService = {
                     if (error) console.error('Error saving tags to Supabase:', error);
                 }
 
-                if (state.lastOpenedDate) {
+                if (state.lastOpenedDate || state.dailyQueueSession) {
                     await supabase.from('settings').upsert({
                         id: SETTINGS_SINGLETON_ID,
-                        last_opened_date: state.lastOpenedDate
+                        last_opened_date: state.lastOpenedDate,
+                        daily_queue_session: state.dailyQueueSession
                     }, { onConflict: 'id' });
                 }
             }
