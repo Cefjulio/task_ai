@@ -16,9 +16,13 @@ export const supabaseService: IStorageService = {
                 // Use maybeSingle() to avoid 406 error if the table is empty
                 const { data: settings, error: settingsError } = await supabase.from('settings').select('last_opened_date, daily_queue_session').maybeSingle();
                 
-                if (taskError || settingsError || tagsError) {
-                    console.error('Error fetching data from Supabase:', { taskError, settingsError, tagsError });
+                if (taskError || tagsError) {
+                    console.error('Error fetching core data from Supabase:', { taskError, tagsError });
                     return null;
+                }
+
+                if (settingsError) {
+                    console.warn('Non-critical: Settings/Queue could not be loaded from Supabase (Schema might need update):', settingsError);
                 }
 
                 return {
@@ -46,7 +50,7 @@ export const supabaseService: IStorageService = {
                             history: t.history || [],
                             tags: t.tags || []
                         })),
-                        lastOpenedDate: settings?.last_opened_date || new Date().toISOString().split('T')[0],
+                        lastOpenedDate: settings?.last_opened_date || new Date().toLocaleDateString('en-CA'),
                         dailyQueueSession: settings?.daily_queue_session || null
                     },
                     version: 0

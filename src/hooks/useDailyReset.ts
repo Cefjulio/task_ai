@@ -6,7 +6,7 @@ export const useDailyReset = () => {
     const { tasks, lastOpenedDate, setLastOpenedDate, setTasks } = useTaskStore();
 
     useEffect(() => {
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = new Date().toLocaleDateString('en-CA');
 
         if (lastOpenedDate !== todayStr) {
             const updatedTasks = processDailyTasks(tasks, lastOpenedDate, todayStr);

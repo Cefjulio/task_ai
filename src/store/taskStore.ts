@@ -47,9 +47,13 @@ export const useTaskStore = create<TaskState>()(
 
             generateQueueSession: (forceRefresh, currentDate) => {
                 set((state) => {
-                    // Only generate a new session if forced, or if the stored session is from a different day
-                    if (!forceRefresh && state.dailyQueueSession?.date === currentDate) {
-                        return state; // Session is still valid
+                    // Only generate a new session if forced, or if the stored session is from a different day.
+                    // Also regenerate if the current session is empty but we have tasks available.
+                    const isNewDay = state.dailyQueueSession?.date !== currentDate;
+                    const isEmptySession = !state.dailyQueueSession?.taskIds || state.dailyQueueSession.taskIds.length === 0;
+                    
+                    if (!forceRefresh && !isNewDay && !isEmptySession) {
+                        return state; // Session is valid and non-empty
                     }
 
                     // 1. Gather all dynamic tasks eligible for the queue
