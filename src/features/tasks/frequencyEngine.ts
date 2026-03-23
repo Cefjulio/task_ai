@@ -46,7 +46,11 @@ export const processDailyTasks = (
  * Determines if a specific task is scheduled to appear on a given date.
  */
 export const isTaskDueOn = (task: Task, dateStr: string): boolean => {
-    // Only primary recurrent tasks are subject to frequency generation
+    // Random tasks (one-offs) never automatically reset - once they are done, they stay done.
+    if (task.category === 'random') return false;
+
+    // Only primary recurrent tasks are subject to frequency generation.
+    // Secondary/Tertiary Dynamic tasks return true so they reset daily for the rotation queue.
     if (task.priority !== 'primary' || !task.frequency) return true;
 
     const current = parseLocalDate(dateStr);
