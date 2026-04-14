@@ -4,6 +4,7 @@ import { Tabs, TabType } from '@/components/dashboard/Tabs';
 import { ThemeToggle } from '@/components/dashboard/ThemeToggle';
 import { DynamicTasksPage } from './DynamicTasksPage';
 import { RandomTasksPage } from './RandomTasksPage';
+import { CoreTasksPage } from './CoreTasksPage';
 import { FloatingActionButton } from '@/components/layout/FloatingActionButton';
 import { TaskFormModal } from '@/components/tasks/TaskFormModal';
 import { Task } from '@/types/Task';
@@ -29,7 +30,8 @@ export const Dashboard: React.FC = () => {
         setModalOpen(true);
     };
 
-    const currentCategory = activeTab === 'dynamic' ? 'dynamic' : 'random';
+    const currentCategory = activeTab === 'random' ? 'random' : 'dynamic';
+    const isCoreTab = activeTab === 'core-tasks';
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 w-full overflow-hidden pb-24 relative transition-colors duration-300">
@@ -49,9 +51,11 @@ export const Dashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="w-full max-w-lg lg:flex-1">
-                        <DateFilter />
-                    </div>
+                    {!isCoreTab && (
+                        <div className="w-full max-w-lg lg:flex-1">
+                            <DateFilter />
+                        </div>
+                    )}
 
                     <div className="flex items-center gap-4">
                         <button
@@ -63,25 +67,27 @@ export const Dashboard: React.FC = () => {
                         </button>
                         <ThemeToggle />
                         <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
-                        <div className="hidden xl:flex items-center gap-3">
-                            {activeTab === 'dynamic' ? (
-                                <button
-                                    onClick={handleCreate}
-                                    className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
-                                >
-                                    <Zap className="w-3.5 h-3.5" />
-                                    New Dynamic Task
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={handleCreate}
-                                    className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-lg shadow-teal-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
-                                >
-                                    <Target className="w-3.5 h-3.5" />
-                                    New Random Task
-                                </button>
-                            )}
-                        </div>
+                        {!isCoreTab && (
+                            <div className="hidden xl:flex items-center gap-3">
+                                {activeTab === 'dynamic' ? (
+                                    <button
+                                        onClick={handleCreate}
+                                        className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
+                                    >
+                                        <Zap className="w-3.5 h-3.5" />
+                                        New Dynamic Task
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleCreate}
+                                        className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-lg shadow-teal-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
+                                    >
+                                        <Target className="w-3.5 h-3.5" />
+                                        New Random Task
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </header>
@@ -98,16 +104,16 @@ export const Dashboard: React.FC = () => {
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2 }}
                     >
-                        {activeTab === 'dynamic' ? (
-                            <DynamicTasksPage onEdit={handleEdit} />
-                        ) : (
-                            <RandomTasksPage onEdit={handleEdit} />
-                        )}
+                        {activeTab === 'dynamic' && <DynamicTasksPage onEdit={handleEdit} />}
+                        {activeTab === 'random' && <RandomTasksPage onEdit={handleEdit} />}
+                        {activeTab === 'core-tasks' && <CoreTasksPage onEdit={handleEdit} />}
                     </motion.div>
                 </AnimatePresence>
             </main>
 
-            <FloatingActionButton onClick={handleCreate} category={currentCategory as 'dynamic' | 'random'} />
+            {!isCoreTab && (
+                <FloatingActionButton onClick={handleCreate} category={currentCategory as 'dynamic' | 'random'} />
+            )}
 
             <TaskFormModal
                 isOpen={isModalOpen}
