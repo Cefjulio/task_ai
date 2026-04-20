@@ -4,6 +4,7 @@ import { useTaskStore } from '@/store/taskStore';
 import { Task } from '@/types/Task';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { TagFilter } from '@/components/tasks/TagFilter';
+import { GoalBadge } from '@/components/tasks/GoalBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pencil, Trash2, CalendarDays, Repeat2, LayoutList, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -181,7 +182,8 @@ export const CoreTasksPage: React.FC<CoreTasksPageProps> = ({ onEdit }) => {
                                             Recurrence <SortIcon field="frequency" />
                                         </button>
                                     </th>
-                                    <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-xs hidden lg:table-cell">Tags</th>
+                                    <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-xs hidden lg:table-cell">Goal</th>
+                                    <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-xs hidden xl:table-cell">Tags</th>
                                     <th className="text-right px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-xs">Actions</th>
                                 </tr>
                             </thead>
@@ -246,8 +248,16 @@ export const CoreTasksPage: React.FC<CoreTasksPageProps> = ({ onEdit }) => {
                                                         {getWeekDayDots(task)}
                                                     </td>
 
-                                                    {/* Tags (hidden on small/medium) */}
+                                                    {/* Goal (hidden on small/medium) */}
                                                     <td className="px-5 py-4 hidden lg:table-cell">
+                                                        {task.goalId
+                                                            ? <GoalBadge goalId={task.goalId} />
+                                                            : <span className="text-xs text-slate-300 dark:text-slate-600 italic">—</span>
+                                                        }
+                                                    </td>
+
+                                                    {/* Tags (hidden on small/medium/large) */}
+                                                    <td className="px-5 py-4 hidden xl:table-cell">
                                                         <div className="flex flex-wrap gap-1.5">
                                                             {taskTags.length > 0 ? taskTags.map(tag => (
                                                                 <span
@@ -283,7 +293,7 @@ export const CoreTasksPage: React.FC<CoreTasksPageProps> = ({ onEdit }) => {
                                                     </td>
                                                 </motion.tr>
 
-                                                {/* Expanded row — shows details on mobile or full info */}
+                                                {/* Expanded row */}
                                                 <AnimatePresence>
                                                     {isExpanded && (
                                                         <motion.tr
@@ -293,9 +303,9 @@ export const CoreTasksPage: React.FC<CoreTasksPageProps> = ({ onEdit }) => {
                                                             exit={{ opacity: 0 }}
                                                             transition={{ duration: 0.15 }}
                                                         >
-                                                            <td colSpan={6} className="bg-primary/5 dark:bg-primary/10 border-b border-slate-100 dark:border-slate-800">
-                                                                <div className="px-6 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                                    {/* Description always shown in expanded */}
+                                                            <td colSpan={7} className="bg-primary/5 dark:bg-primary/10 border-b border-slate-100 dark:border-slate-800">
+                                                                <div className="px-6 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                                    {/* Description */}
                                                                     <div>
                                                                         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Description</p>
                                                                         <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -303,8 +313,17 @@ export const CoreTasksPage: React.FC<CoreTasksPageProps> = ({ onEdit }) => {
                                                                         </p>
                                                                     </div>
 
-                                                                    {/* Tags on mobile */}
-                                                                    <div className="lg:hidden">
+                                                                    {/* Goal — always shown in expanded */}
+                                                                    <div>
+                                                                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">Goal</p>
+                                                                        {task.goalId
+                                                                            ? <GoalBadge goalId={task.goalId} size="md" />
+                                                                            : <span className="text-xs text-slate-400 italic">No goal</span>
+                                                                        }
+                                                                    </div>
+
+                                                                    {/* Tags on < xl */}
+                                                                    <div className="xl:hidden">
                                                                         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">Tags</p>
                                                                         <div className="flex flex-wrap gap-1.5">
                                                                             {taskTags.length > 0 ? taskTags.map(tag => (
@@ -330,7 +349,7 @@ export const CoreTasksPage: React.FC<CoreTasksPageProps> = ({ onEdit }) => {
                                                                         </div>
                                                                     )}
 
-                                                                    {/* Completions count */}
+                                                                    {/* Completions */}
                                                                     <div>
                                                                         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Stats</p>
                                                                         <p className="text-sm text-slate-700 dark:text-slate-300">

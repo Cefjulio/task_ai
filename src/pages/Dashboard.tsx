@@ -13,12 +13,27 @@ import { MotivationalBanner } from '@/components/dashboard/MotivationalBanner';
 import { DateFilter } from '@/components/tasks/DateFilter';
 import { Target, Zap, Tags } from 'lucide-react';
 import { ManageTagsModal } from '@/components/tasks/ManageTagsModal';
+import { StudyListPage } from './StudyListPage';
+import { StudyListFormModal } from '@/components/study/StudyListFormModal';
+import { StudyItem } from '@/types/StudyItem';
 
 export const Dashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('dynamic');
     const [isModalOpen, setModalOpen] = useState(false);
     const [isTagsModalOpen, setTagsModalOpen] = useState(false);
     const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+    const [isStudyModalOpen, setStudyModalOpen] = useState(false);
+    const [studyItemToEdit, setStudyItemToEdit] = useState<StudyItem | null>(null);
+
+    const handleStudyEdit = (item: StudyItem) => {
+        setStudyItemToEdit(item);
+        setStudyModalOpen(true);
+    };
+
+    const handleStudyCreate = () => {
+        setStudyItemToEdit(null);
+        setStudyModalOpen(true);
+    };
 
     const handleEdit = (task: Task) => {
         setTaskToEdit(task);
@@ -51,7 +66,7 @@ export const Dashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    {!isCoreTab && (
+                    {!isCoreTab && activeTab !== 'study-list' && (
                         <div className="w-full max-w-lg lg:flex-1">
                             <DateFilter />
                         </div>
@@ -69,7 +84,15 @@ export const Dashboard: React.FC = () => {
                         <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
                         {!isCoreTab && (
                             <div className="hidden xl:flex items-center gap-3">
-                                {activeTab === 'dynamic' ? (
+                                {activeTab === 'study-list' ? (
+                                    <button
+                                        onClick={handleStudyCreate}
+                                        className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
+                                    >
+                                        <Zap className="w-3.5 h-3.5" />
+                                        New Study Item
+                                    </button>
+                                ) : activeTab === 'dynamic' ? (
                                     <button
                                         onClick={handleCreate}
                                         className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
@@ -107,12 +130,17 @@ export const Dashboard: React.FC = () => {
                         {activeTab === 'dynamic' && <DynamicTasksPage onEdit={handleEdit} />}
                         {activeTab === 'random' && <RandomTasksPage onEdit={handleEdit} />}
                         {activeTab === 'core-tasks' && <CoreTasksPage onEdit={handleEdit} />}
+                        {activeTab === 'study-list' && <StudyListPage onEdit={handleStudyEdit} />}
                     </motion.div>
                 </AnimatePresence>
             </main>
 
-            {!isCoreTab && (
+            {!isCoreTab && activeTab !== 'study-list' && (
                 <FloatingActionButton onClick={handleCreate} category={currentCategory as 'dynamic' | 'random'} />
+            )}
+
+            {activeTab === 'study-list' && (
+                <FloatingActionButton onClick={handleStudyCreate} category="dynamic" />
             )}
 
             <TaskFormModal
@@ -120,6 +148,12 @@ export const Dashboard: React.FC = () => {
                 onClose={() => setModalOpen(false)}
                 taskToEdit={taskToEdit}
                 defaultCategory={currentCategory}
+            />
+
+            <StudyListFormModal
+                isOpen={isStudyModalOpen}
+                onClose={() => setStudyModalOpen(false)}
+                itemToEdit={studyItemToEdit}
             />
 
             <ManageTagsModal

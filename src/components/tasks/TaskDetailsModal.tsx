@@ -5,6 +5,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { SubStepItem } from './SubStepItem';
 import { useTasks } from '@/hooks/useTasks';
 import { X } from 'lucide-react';
+import { GoalBadge } from './GoalBadge';
 
 interface TaskDetailsModalProps {
     isOpen: boolean;
@@ -26,10 +27,15 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onCl
                 role="dialog"
             >
                 <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
-                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white truncate pr-4">
-                        {task.title}
-                    </h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                    <div className="flex-1 pr-4 min-w-0">
+                        <h2 className="text-xl font-semibold text-slate-900 dark:text-white truncate">{task.title}</h2>
+                        {task.goalId && (
+                            <div className="mt-1.5">
+                                <GoalBadge goalId={task.goalId} size="md" />
+                            </div>
+                        )}
+                    </div>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors shrink-0">
                         <X className="w-6 h-6" />
                     </button>
                 </div>

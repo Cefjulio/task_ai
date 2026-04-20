@@ -31,4 +31,5 @@ export interface Task {
     lastQueuedAt?: string; // ISO string for rotation
     history?: { date: string; status: TaskStatus }[]; // ISO strings of dates (YYYY-MM-DD)
     tags?: string[]; // Array of Tag IDs
+    goalId?: string; // Optional reference to a Goal ID
 }

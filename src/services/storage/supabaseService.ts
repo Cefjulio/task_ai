@@ -73,6 +73,33 @@ export const supabaseService: IStorageService = {
                     version: 0
                 };
             }
+
+            if (name === 'todo-ai-study-storage') {
+                const { data: studyItems, error } = await supabase.from('study_items').select('*');
+                if (error) {
+                    console.error('Error fetching study items from Supabase:', error);
+                    return null;
+                }
+                return {
+                    state: {
+                        studyItems: (studyItems || []).map((t: any) => ({
+                            id: t.id,
+                            title: t.title,
+                            description: t.description,
+                            contentType: t.content_type,
+                            contentUrl: t.content_url,
+                            completionPercentage: t.completion_percentage,
+                            lastPageRead: t.last_page_read,
+                            notes: t.notes,
+                            status: t.status,
+                            tags: t.tags || [],
+                            createdAt: t.created_at,
+                            updatedAt: t.updated_at
+                        }))
+                    },
+                    version: 0
+                };
+            }
         } catch (err) {
             console.error('SupabaseService.getItem critical error:', err);
         }
@@ -145,6 +172,29 @@ export const supabaseService: IStorageService = {
                 }, { onConflict: 'id' });
                 if (error) console.error('Error saving settings to Supabase:', error);
             }
+
+            if (name === 'todo-ai-study-storage') {
+                if (state.studyItems && state.studyItems.length > 0) {
+                    const { error } = await supabase.from('study_items').upsert(
+                        state.studyItems.map((t: any) => ({
+                            id: t.id,
+                            title: t.title,
+                            description: t.description,
+                            content_type: t.contentType,
+                            content_url: t.contentUrl,
+                            completion_percentage: t.completionPercentage,
+                            last_page_read: t.lastPageRead,
+                            notes: t.notes,
+                            status: t.status,
+                            tags: t.tags || [],
+                            created_at: t.createdAt,
+                            updated_at: t.updatedAt
+                        })),
+                        { onConflict: 'id' }
+                    );
+                    if (error) console.error('Error saving study items to Supabase:', error);
+                }
+            }
         } catch (err) {
             console.error('SupabaseService.setItem critical error:', err);
         }
@@ -157,6 +207,9 @@ export const supabaseService: IStorageService = {
         }
         if (name === 'todo-ai-settings') {
             await supabase.from('settings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+        if (name === 'todo-ai-study-storage') {
+            await supabase.from('study_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         }
     }
 };

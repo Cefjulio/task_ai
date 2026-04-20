@@ -3,7 +3,7 @@ import { Task, TaskPriority, TaskFrequency } from '@/types/Task';
 import { useTaskStore } from '@/store/taskStore';
 import { useTasks } from '@/hooks/useTasks';
 import { Button } from '@/components/ui/Button';
-import { X } from 'lucide-react';
+import { X, Target } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface TaskFormModalProps {
@@ -15,7 +15,7 @@ interface TaskFormModalProps {
 
 export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, taskToEdit, defaultCategory = 'dynamic' }) => {
     const { addTask, updateTask } = useTasks(); // Keep useTasks for operations
-    const { tags } = useTaskStore(); // Pull tags from the store
+    const { tags, goals } = useTaskStore(); // Pull tags and goals from the store
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -27,6 +27,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
     const [weekInterval, setWeekInterval] = useState<number>(1);
     const [subStepsText, setSubStepsText] = useState('');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [selectedGoalId, setSelectedGoalId] = useState<string>('');
 
     const days = [
         { label: 'S', value: 0 },
@@ -50,6 +51,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
             setWeekInterval(taskToEdit.weekInterval || 1);
             setSubStepsText(taskToEdit.subSteps.map(s => s.text).join('\n'));
             setSelectedTags(taskToEdit.tags || []);
+            setSelectedGoalId(taskToEdit.goalId || '');
         } else {
             setTitle('');
             setDescription('');
@@ -61,6 +63,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
             setWeekInterval(1);
             setSubStepsText('');
             setSelectedTags([]);
+            setSelectedGoalId('');
         }
     }, [taskToEdit, isOpen, defaultCategory]);
 
@@ -109,6 +112,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
                 priority: finalPriority,
                 category,
                 tags: selectedTags,
+                goalId: selectedGoalId || undefined,
                 subSteps: parsedSubSteps,
                 frequency: finalPriority === 'primary' ? frequency : undefined,
                 frequencyInterval: finalPriority === 'primary' && frequency === 'every_x_days' ? frequencyInterval : undefined,
@@ -123,6 +127,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
                 priority: finalPriority,
                 category,
                 tags: selectedTags,
+                goalId: selectedGoalId || undefined,
                 subSteps: parsedSubSteps,
                 frequency: finalPriority === 'primary' ? (frequency || 'daily') : undefined,
                 frequencyInterval: finalPriority === 'primary' && frequency === 'every_x_days' ? frequencyInterval : 1,
@@ -162,6 +167,44 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
                             placeholder="e.g. Read 10 pages"
                         />
                     </div>
+
+                    {/* Goal selector */}
+                    {goals.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                                <Target className="w-4 h-4 text-primary" /> Goal
+                                <span className="text-slate-400 font-normal text-xs">(Optional)</span>
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedGoalId('')}
+                                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                                        !selectedGoalId
+                                            ? 'bg-slate-200 dark:bg-slate-700 border-transparent text-slate-700 dark:text-slate-200 scale-105'
+                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300'
+                                    }`}
+                                >
+                                    None
+                                </button>
+                                {goals.filter(g => g.status === 'active').map(goal => (
+                                    <button
+                                        key={goal.id}
+                                        type="button"
+                                        onClick={() => setSelectedGoalId(goal.id)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border flex items-center gap-1.5 ${
+                                            selectedGoalId === goal.id
+                                                ? `${goal.color} border-transparent text-white shadow-sm scale-105`
+                                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300'
+                                        }`}
+                                    >
+                                        <span>{goal.emoji}</span>
+                                        <span>{goal.title}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {tags.length > 0 && (
                         <div>
