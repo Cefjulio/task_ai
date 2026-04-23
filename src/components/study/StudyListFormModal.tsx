@@ -5,8 +5,8 @@ import { StudyItem, StudyContentType } from '@/types/StudyItem';
 import { useStudyStore } from '@/store/studyStore';
 import { useTaskStore } from '@/store/taskStore';
 import { cn } from '@/components/ui/Button';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 interface StudyListFormModalProps {
     isOpen: boolean;
