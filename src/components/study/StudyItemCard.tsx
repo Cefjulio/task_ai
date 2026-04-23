@@ -11,12 +11,21 @@ interface StudyItemCardProps {
     onEdit: (item: StudyItem) => void;
 }
 
+const PRIORITY_STYLES: Record<string, { label: string; bg: string; text: string; dot: string }> = {
+    high:   { label: 'High',   bg: 'bg-red-50 dark:bg-red-900/20',    text: 'text-red-600 dark:text-red-400',    dot: 'bg-red-500' },
+    medium: { label: 'Medium', bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' },
+    low:    { label: 'Low',    bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-600 dark:text-green-400', dot: 'bg-green-500' },
+};
+
 export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit }) => {
     const { markStudyItemStatus } = useStudyStore();
     const { tags } = useTaskStore();
     const [expanded, setExpanded] = useState(false);
 
-    const isCompleted = item.status === 'completed';
+    // Support both 'reviewed' (new) and 'completed' (legacy) as the "done" state
+    const isReviewed = item.status === 'reviewed' || item.status === 'completed';
+    const priority = item.priority || 'medium';
+    const priorityStyle = PRIORITY_STYLES[priority] ?? PRIORITY_STYLES.medium;
 
     const renderContentIcon = () => {
         switch (item.contentType) {
@@ -30,10 +39,9 @@ export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit }) =>
 
     const toggleStatus = (e: React.MouseEvent) => {
         e.stopPropagation();
-        markStudyItemStatus(item.id, isCompleted ? 'pending' : 'completed');
+        markStudyItemStatus(item.id, isReviewed ? 'pending' : 'reviewed');
     };
 
-    // Replace the embed URL trick logic depending on content type
     const getEmbedUrl = (url: string, type: string) => {
         if (!url) return '';
         if (type === 'youtube') {
@@ -51,7 +59,7 @@ export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit }) =>
             className={cn(
                 "group relative bg-white dark:bg-slate-900 border overflow-hidden p-5 transition-all duration-300 shadow-sm cursor-pointer border-slate-200 dark:border-slate-800",
                 expanded ? "rounded-2xl" : "rounded-xl hover:-translate-y-1 hover:shadow-md",
-                isCompleted && "bg-slate-50 dark:bg-slate-900/50 border-teal-200 dark:border-teal-900/50 opacity-80"
+                isReviewed && "bg-slate-50 dark:bg-slate-900/50 border-teal-200 dark:border-teal-900/50 opacity-80"
             )}
         >
             <div className="flex justify-between items-start gap-4">
@@ -63,7 +71,18 @@ export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit }) =>
                         </h3>
                     </div>
 
+                    {/* Priority badge + tags */}
                     <div className="flex flex-wrap items-center gap-2 mb-3">
+                        {/* Priority badge */}
+                        <span className={cn(
+                            "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider",
+                            priorityStyle.bg, priorityStyle.text
+                        )}>
+                            <span className={cn("w-1.5 h-1.5 rounded-full", priorityStyle.dot)} />
+                            {priorityStyle.label}
+                        </span>
+
+                        {/* Tags */}
                         {item.tags.map(tagId => {
                             const tag = tags.find(t => t.id === tagId);
                             if (!tag) return null;
@@ -86,7 +105,7 @@ export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit }) =>
                             {item.completionPercentage}%
                         </span>
                         <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                            Page: {item.lastPageRead || '0'}
+                            Page: {item.lastPageRead || '—'}
                         </span>
                     </div>
 
@@ -99,24 +118,26 @@ export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit }) =>
                             <Edit2 className="w-4 h-4" />
                         </button>
                         
+                        {/* Reviewed / Pending toggle */}
                         <button
                             onClick={toggleStatus}
                             className={cn(
                                 "p-1.5 rounded-lg transition-colors flex flex-row items-center gap-1 px-2 text-xs font-bold",
-                                isCompleted 
+                                isReviewed 
                                     ? "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600"
                                     : "bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-teal-900/50"
                             )}
+                            title={isReviewed ? 'Mark as Pending' : 'Mark as Reviewed'}
                         >
-                            {isCompleted ? (
+                            {isReviewed ? (
                                 <>
                                     <RotateCcw className="w-3.5 h-3.5" />
-                                    <span>Reset</span>
+                                    <span>Pending</span>
                                 </>
                             ) : (
                                 <>
                                     <CheckCircle className="w-3.5 h-3.5" />
-                                    <span>Complete</span>
+                                    <span>Reviewed</span>
                                 </>
                             )}
                         </button>

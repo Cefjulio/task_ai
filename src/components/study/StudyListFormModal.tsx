@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, Type, Link, Percent, FileText } from 'lucide-react';
-import { StudyItem, StudyContentType } from '@/types/StudyItem';
+import { StudyItem, StudyContentType, StudyPriority } from '@/types/StudyItem';
 import { useStudyStore } from '@/store/studyStore';
 import { useTaskStore } from '@/store/taskStore';
 import { cn } from '@/components/ui/Button';
@@ -13,6 +13,12 @@ interface StudyListFormModalProps {
     onClose: () => void;
     itemToEdit: StudyItem | null;
 }
+
+const PRIORITY_OPTIONS: { value: StudyPriority; label: string; color: string }[] = [
+    { value: 'high',   label: 'High',   color: '#ef4444' },
+    { value: 'medium', label: 'Medium', color: '#f59e0b' },
+    { value: 'low',    label: 'Low',    color: '#22c55e' },
+];
 
 export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
     isOpen,
@@ -30,6 +36,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
     const [lastPageRead, setLastPageRead] = useState('');
     const [notes, setNotes] = useState('');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [priority, setPriority] = useState<StudyPriority>('medium');
 
     useEffect(() => {
         if (isOpen) {
@@ -42,6 +49,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                 setLastPageRead(itemToEdit.lastPageRead || '');
                 setNotes(itemToEdit.notes || '');
                 setSelectedTags(itemToEdit.tags || []);
+                setPriority(itemToEdit.priority || 'medium');
             } else {
                 setTitle('');
                 setDescription('');
@@ -51,6 +59,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                 setLastPageRead('');
                 setNotes('');
                 setSelectedTags([]);
+                setPriority('medium');
             }
         }
     }, [isOpen, itemToEdit]);
@@ -68,6 +77,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
             lastPageRead,
             notes,
             tags: selectedTags,
+            priority,
         };
 
         if (itemToEdit) {
@@ -78,8 +88,10 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
         onClose();
     };
 
-    const toggleTag = (tagId: string) => {
-        setSelectedTags(prev => 
+    const toggleTag = (e: React.MouseEvent, tagId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedTags(prev =>
             prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
         );
     };
@@ -127,6 +139,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                     <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
                         <form id="study-form" onSubmit={handleSave} className="space-y-6">
                             
+                            {/* Title */}
                             <div>
                                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">
                                     <Type className="w-4 h-4" /> Title
@@ -141,6 +154,36 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                                 />
                             </div>
 
+                            {/* Priority */}
+                            <div>
+                                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">
+                                    Priority
+                                </label>
+                                <div className="flex gap-2">
+                                    {PRIORITY_OPTIONS.map(opt => (
+                                        <button
+                                            key={opt.value}
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); setPriority(opt.value); }}
+                                            className={cn(
+                                                "flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border-2",
+                                                priority === opt.value
+                                                    ? "text-white shadow-md scale-100"
+                                                    : "bg-transparent opacity-60 hover:opacity-90 scale-95"
+                                            )}
+                                            style={{
+                                                backgroundColor: priority === opt.value ? opt.color : `${opt.color}18`,
+                                                borderColor: opt.color,
+                                                color: priority === opt.value ? '#fff' : opt.color,
+                                            }}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Type & URL */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">
@@ -171,6 +214,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                                 </div>
                             </div>
 
+                            {/* Completion % & Last Page/Timestamp */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">
@@ -187,7 +231,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                                 </div>
                                 <div>
                                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">
-                                        <FileText className="w-4 h-4" /> Page/Timestamp
+                                        <FileText className="w-4 h-4" /> Last Page/Timestamp Completed
                                     </label>
                                     <input
                                         type="text"
@@ -199,6 +243,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                                 </div>
                             </div>
 
+                            {/* Description */}
                             <div className="mb-4 text-black">
                                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">
                                     Description
@@ -214,6 +259,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                                 </div>
                             </div>
 
+                            {/* Notes */}
                             <div className="mb-4 text-black pt-4">
                                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">
                                     Notes
@@ -229,6 +275,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                                 </div>
                             </div>
 
+                            {/* Tags */}
                             {tags.length > 0 && (
                                 <div className="pt-4">
                                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">
@@ -241,15 +288,15 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                                                 <button
                                                     key={tag.id}
                                                     type="button"
-                                                    onClick={() => toggleTag(tag.id)}
+                                                    onClick={(e) => toggleTag(e, tag.id)}
                                                     className={cn(
-                                                        "px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
-                                                        isSelected ? "ring-2 ring-offset-1 dark:ring-offset-slate-900 shadow-sm" : "opacity-60 hover:opacity-100"
+                                                        "px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border-2",
+                                                        isSelected ? "shadow-sm scale-100" : "opacity-60 hover:opacity-100 scale-95"
                                                     )}
                                                     style={{
                                                         backgroundColor: isSelected ? tag.color : `${tag.color}20`,
                                                         color: isSelected ? '#fff' : tag.color,
-                                                        borderColor: tag.color
+                                                        borderColor: tag.color,
                                                     }}
                                                 >
                                                     {tag.name}

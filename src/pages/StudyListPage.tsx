@@ -2,20 +2,33 @@ import React, { useMemo, useState } from 'react';
 import { useStudyStore } from '@/store/studyStore';
 import { useTaskStore } from '@/store/taskStore';
 import { StudyItemCard } from '@/components/study/StudyItemCard';
-import { StudyItem } from '@/types/StudyItem';
+import { StudyItem, StudyPriority } from '@/types/StudyItem';
 import { Search, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/components/ui/Button';
 
 interface StudyListPageProps {
     onEdit: (item: StudyItem) => void;
 }
+
+type PriorityFilter = StudyPriority | 'all';
+
+const PRIORITY_FILTERS: { value: PriorityFilter; label: string; dot: string }[] = [
+    { value: 'all',    label: 'All',    dot: 'bg-slate-400' },
+    { value: 'high',   label: 'High',   dot: 'bg-red-500' },
+    { value: 'medium', label: 'Medium', dot: 'bg-amber-500' },
+    { value: 'low',    label: 'Low',    dot: 'bg-green-500' },
+];
+
+const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
 export const StudyListPage: React.FC<StudyListPageProps> = ({ onEdit }) => {
     const { studyItems } = useStudyStore();
     const { tags } = useTaskStore();
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedTagFitler, setSelectedTagFilter] = useState<string | null>(null);
+    const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
+    const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
 
     const filteredItems = useMemo(() => {
         let items = studyItems;
@@ -25,57 +38,89 @@ export const StudyListPage: React.FC<StudyListPageProps> = ({ onEdit }) => {
             items = items.filter(t => t.title.toLowerCase().includes(q));
         }
 
-        if (selectedTagFitler) {
-            items = items.filter(t => t.tags.includes(selectedTagFitler));
+        if (selectedTagFilter) {
+            items = items.filter(t => t.tags.includes(selectedTagFilter));
         }
 
-        // Sort pending top, completed bottom
+        if (priorityFilter !== 'all') {
+            items = items.filter(t => (t.priority || 'medium') === priorityFilter);
+        }
+
+        // Sort: pending before reviewed, then by priority (high > medium > low), then by updated date
         return [...items].sort((a, b) => {
-            if (a.status === 'pending' && b.status === 'completed') return -1;
-            if (a.status === 'completed' && b.status === 'pending') return 1;
-            // then by updated at
+            const aReviewed = a.status === 'reviewed' || a.status === 'completed';
+            const bReviewed = b.status === 'reviewed' || b.status === 'completed';
+            if (!aReviewed && bReviewed) return -1;
+            if (aReviewed && !bReviewed) return 1;
+            const pa = PRIORITY_ORDER[a.priority || 'medium'] ?? 1;
+            const pb = PRIORITY_ORDER[b.priority || 'medium'] ?? 1;
+            if (pa !== pb) return pa - pb;
             return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
         });
-    }, [studyItems, searchQuery, selectedTagFitler]);
+    }, [studyItems, searchQuery, selectedTagFilter, priorityFilter]);
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-8">
-                <div className="relative w-full md:w-96">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder="Search items..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl pl-12 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all dark:text-white"
-                    />
+            {/* Search + Priority Filters row */}
+            <div className="flex flex-col gap-4 mb-2">
+                <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div className="relative w-full md:w-96">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search items..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl pl-12 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all dark:text-white"
+                        />
+                    </div>
+
+                    {/* Tag filters */}
+                    <div className="flex w-full md:w-auto items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                        <button
+                            onClick={() => setSelectedTagFilter(null)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                                selectedTagFilter === null
+                                    ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 shadow-md scale-100'
+                                    : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 scale-95 border border-slate-200 dark:border-slate-700'
+                            }`}
+                        >
+                            All Tags
+                        </button>
+                        {tags.map(tag => (
+                            <button
+                                key={tag.id}
+                                onClick={() => setSelectedTagFilter(tag.id)}
+                                className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap"
+                                style={{
+                                    backgroundColor: selectedTagFilter === tag.id ? tag.color : `${tag.color}15`,
+                                    color: selectedTagFilter === tag.id ? '#ffffff' : tag.color,
+                                    boxShadow: selectedTagFilter === tag.id ? `0 4px 14px 0 ${tag.color}40` : 'none',
+                                    transform: selectedTagFilter === tag.id ? 'scale(1)' : 'scale(0.95)'
+                                }}
+                            >
+                                {tag.name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
-                <div className="flex w-full md:w-auto items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-                    <button
-                        onClick={() => setSelectedTagFilter(null)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
-                            selectedTagFitler === null
-                                ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 shadow-md scale-100'
-                                : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 scale-95 border border-slate-200 dark:border-slate-700'
-                        }`}
-                    >
-                        All
-                    </button>
-                    {tags.map(tag => (
+                {/* Priority filters */}
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Priority:</span>
+                    {PRIORITY_FILTERS.map(f => (
                         <button
-                            key={tag.id}
-                            onClick={() => setSelectedTagFilter(tag.id)}
-                            className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap"
-                            style={{
-                                backgroundColor: selectedTagFitler === tag.id ? tag.color : `${tag.color}15`,
-                                color: selectedTagFitler === tag.id ? '#ffffff' : tag.color,
-                                boxShadow: selectedTagFitler === tag.id ? `0 4px 14px 0 ${tag.color}40` : 'none',
-                                transform: selectedTagFitler === tag.id ? 'scale(1)' : 'scale(0.95)'
-                            }}
+                            key={f.value}
+                            onClick={() => setPriorityFilter(f.value)}
+                            className={cn(
+                                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
+                                priorityFilter === f.value
+                                    ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 shadow-md"
+                                    : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
+                            )}
                         >
-                            {tag.name}
+                            <span className={cn("w-2 h-2 rounded-full", f.dot)} />
+                            {f.label}
                         </button>
                     ))}
                 </div>
