@@ -5,7 +5,7 @@ import { Plan } from '@/types/Plan';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Target, Plus, Pencil, Trash2, CheckCircle2, Archive,
-    RotateCcw, X, Calendar, Layers, Lightbulb, Save, FileText
+    RotateCcw, X, Calendar, Layers, Lightbulb, Save
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
