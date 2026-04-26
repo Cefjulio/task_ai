@@ -13,11 +13,13 @@ export const supabaseService: IStorageService = {
             if (name === 'todo-ai-storage') {
                 const { data: tasks, error: taskError } = await supabase.from('tasks').select('*');
                 const { data: tags, error: tagsError } = await supabase.from('tags').select('*');
+                const { data: goals, error: goalsError } = await supabase.from('goals').select('*');
+                const { data: plans, error: plansError } = await supabase.from('plans').select('*');
                 // Use maybeSingle() to avoid 406 error if the table is empty
                 const { data: settings, error: settingsError } = await supabase.from('settings').select('last_opened_date, daily_queue_session').maybeSingle();
                 
-                if (taskError || tagsError) {
-                    console.error('Error fetching core data from Supabase:', { taskError, tagsError });
+                if (taskError || tagsError || goalsError || plansError) {
+                    console.error('Error fetching core data from Supabase:', { taskError, tagsError, goalsError, plansError });
                     return null;
                 }
 
@@ -48,7 +50,25 @@ export const supabaseService: IStorageService = {
                             createdAt: t.created_at,
                             lastQueuedAt: t.last_queued_at,
                             history: t.history || [],
-                            tags: t.tags || []
+                            tags: t.tags || [],
+                            goalId: t.goal_id
+                        })),
+                        goals: (goals || []).map((g: any) => ({
+                            id: g.id,
+                            title: g.title,
+                            description: g.description,
+                            color: g.color,
+                            emoji: g.emoji,
+                            status: g.status,
+                            createdAt: g.created_at,
+                            targetDate: g.target_date
+                        })),
+                        plans: (plans || []).map((p: any) => ({
+                            id: p.id,
+                            title: p.title,
+                            content: p.content,
+                            createdAt: p.created_at,
+                            updatedAt: p.updated_at
                         })),
                         lastOpenedDate: settings?.last_opened_date || new Date().toLocaleDateString('en-CA'),
                         dailyQueueSession: settings?.daily_queue_session || null
@@ -135,11 +155,43 @@ export const supabaseService: IStorageService = {
                             created_at: t.createdAt,
                             last_queued_at: t.lastQueuedAt,
                             history: t.history || [],
-                            tags: t.tags || []
+                            tags: t.tags || [],
+                            goal_id: t.goalId
                         })),
                         { onConflict: 'id' }
                     );
                     if (error) console.error('Error saving tasks to Supabase:', error);
+                }
+
+                if (state.goals && state.goals.length > 0) {
+                    const { error } = await supabase.from('goals').upsert(
+                        state.goals.map((g: any) => ({
+                            id: g.id,
+                            title: g.title,
+                            description: g.description,
+                            color: g.color,
+                            emoji: g.emoji,
+                            status: g.status,
+                            created_at: g.createdAt,
+                            target_date: g.targetDate || null
+                        })),
+                        { onConflict: 'id' }
+                    );
+                    if (error) console.error('Error saving goals to Supabase:', error);
+                }
+
+                if (state.plans && state.plans.length > 0) {
+                    const { error } = await supabase.from('plans').upsert(
+                        state.plans.map((p: any) => ({
+                            id: p.id,
+                            title: p.title,
+                            content: p.content,
+                            created_at: p.createdAt,
+                            updated_at: p.updatedAt
+                        })),
+                        { onConflict: 'id' }
+                    );
+                    if (error) console.error('Error saving plans to Supabase:', error);
                 }
 
                 if (state.tags && state.tags.length > 0) {
@@ -204,6 +256,8 @@ export const supabaseService: IStorageService = {
         if (name === 'todo-ai-storage') {
             await supabase.from('tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
             await supabase.from('tags').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            await supabase.from('goals').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            await supabase.from('plans').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         }
         if (name === 'todo-ai-settings') {
             await supabase.from('settings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
