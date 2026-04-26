@@ -5,7 +5,7 @@ import { Plan } from '@/types/Plan';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Target, Plus, Pencil, Trash2, CheckCircle2, Archive,
-    RotateCcw, X, Calendar, Layers, Lightbulb, Save
+    RotateCcw, X, Calendar, Layers, Lightbulb, Save, Eye
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -253,17 +253,103 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, goalToEd
         </div>
     );
 };
+// ── ViewGoalModal ─────────────────────────────────────────────────────────────
+interface ViewGoalModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    goal: Goal | null;
+    linkedTasks: any[];
+}
+
+const ViewGoalModal: React.FC<ViewGoalModalProps> = ({ isOpen, onClose, goal, linkedTasks }) => {
+    if (!isOpen || !goal) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-2xl ${goal.color} flex items-center justify-center text-2xl shadow-lg`}>
+                            {goal.emoji}
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold dark:text-white">{goal.title}</h2>
+                            <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5 uppercase tracking-widest font-bold">
+                                <span>{goal.status}</span>
+                                {goal.targetDate && (
+                                    <>
+                                        <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                        <span className="flex items-center gap-1">
+                                            <Calendar className="w-3 h-3" />
+                                            {format(new Date(goal.targetDate + 'T00:00:00'), 'MMM d, yyyy')}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+                
+                <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1">
+                    {/* Description */}
+                    {goal.description && (
+                        <section>
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Goal Description</h3>
+                            <div 
+                                className="text-slate-600 dark:text-slate-300 prose prose-slate dark:prose-invert max-w-none"
+                                dangerouslySetInnerHTML={{ __html: goal.description }}
+                            />
+                        </section>
+                    )}
+
+                    {/* Linked Tasks */}
+                    <section>
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Linked Dynamic Tasks ({linkedTasks.length})</h3>
+                        {linkedTasks.length === 0 ? (
+                            <p className="text-sm text-slate-400 italic">No tasks linked to this goal yet.</p>
+                        ) : (
+                            <div className="grid gap-2">
+                                {linkedTasks.map(t => (
+                                    <div key={t.id} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                                        <CheckCircle2 className={`w-4 h-4 ${t.status === 'done' ? 'text-emerald-500' : 'text-slate-300'}`} />
+                                        <span className={`text-sm font-medium ${t.status === 'done' ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                                            {t.title}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                </div>
+
+                <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex justify-end">
+                    <button onClick={onClose} className="px-8 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-bold text-sm transition-transform hover:scale-105 active:scale-95">
+                        Close View
+                    </button>
+                </div>
+            </motion.div>
+        </div>
+    );
+};
 
 // ── GoalCard ──────────────────────────────────────────────────────────────────
 interface GoalCardProps {
     goal: Goal;
     taskCount: number;
+    onView: (goal: Goal) => void;
     onEdit: (goal: Goal) => void;
     onDelete: (goal: Goal) => void;
     onStatusChange: (goal: Goal, status: GoalStatus) => void;
 }
 
-const GoalCard: React.FC<GoalCardProps> = ({ goal, taskCount, onEdit, onDelete, onStatusChange }) => {
+const GoalCard: React.FC<GoalCardProps> = ({ goal, taskCount, onView, onEdit, onDelete, onStatusChange }) => {
     const status = statusConfig[goal.status];
     const isArchived = goal.status === 'archived';
 
@@ -319,6 +405,11 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, taskCount, onEdit, onDelete, 
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button onClick={() => onView(goal)} title="View Details"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-primary bg-primary/5 hover:bg-primary/10 rounded-xl transition-all">
+                        <Eye className="w-3.5 h-3.5" /> View
+                    </button>
+
                     <button onClick={() => onEdit(goal)} title="Edit"
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-primary hover:bg-primary/10 rounded-xl transition-all">
                         <Pencil className="w-3.5 h-3.5" /> Edit
@@ -358,11 +449,12 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, taskCount, onEdit, onDelete, 
 // ── PlanCard ──────────────────────────────────────────────────────────────────
 interface PlanCardProps {
     plan: Plan;
+    onView: (plan: Plan) => void;
     onEdit: (plan: Plan) => void;
     onDelete: (plan: Plan) => void;
 }
 
-const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete }) => {
+const PlanCard: React.FC<PlanCardProps> = ({ plan, onView, onEdit, onDelete }) => {
     return (
         <motion.div
             layout
@@ -379,6 +471,9 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete }) => {
                     <h3 className="text-base font-bold text-slate-900 dark:text-white">{plan.title}</h3>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => onView(plan)} title="View" className="p-1.5 text-slate-400 hover:text-primary rounded-lg transition-colors">
+                        <Eye className="w-4 h-4" />
+                    </button>
                     <button onClick={() => onEdit(plan)} className="p-1.5 text-slate-400 hover:text-primary rounded-lg transition-colors">
                         <Pencil className="w-4 h-4" />
                     </button>
@@ -397,6 +492,53 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete }) => {
                 </span>
             </div>
         </motion.div>
+    );
+};
+
+// ── ViewPlanModal ─────────────────────────────────────────────────────────────
+interface ViewPlanModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    plan: Plan | null;
+}
+
+const ViewPlanModal: React.FC<ViewPlanModalProps> = ({ isOpen, onClose, plan }) => {
+    if (!isOpen || !plan) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                            <Lightbulb className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <h2 className="text-xl font-bold dark:text-white">{plan.title}</h2>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+                <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
+                    <div 
+                        className="text-slate-600 dark:text-slate-300 prose prose-slate dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{ __html: plan.content }}
+                    />
+                </div>
+                <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        Last updated {format(new Date(plan.updatedAt), 'MMMM d, yyyy h:mm a')}
+                    </span>
+                    <button onClick={onClose} className="px-8 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-bold text-sm transition-transform hover:scale-105 active:scale-95">
+                        Done Reading
+                    </button>
+                </div>
+            </motion.div>
+        </div>
     );
 };
 
@@ -500,13 +642,22 @@ export const GoalsPage: React.FC = () => {
     const [isPlanModalOpen, setPlanModalOpen] = useState(false);
     const [planToEdit, setPlanToEdit] = useState<Plan | null>(null);
 
+    const [isViewGoalOpen, setViewGoalOpen] = useState(false);
+    const [goalToView, setGoalToView] = useState<Goal | null>(null);
+    const [isViewPlanOpen, setViewPlanOpen] = useState(false);
+    const [planToView, setPlanToView] = useState<Plan | null>(null);
+
     const taskCountForGoal = (goalId: string) =>
         tasks.filter(t => t.goalId === goalId).length;
+
+    const getLinkedTasks = (goalId: string) =>
+        tasks.filter(t => t.goalId === goalId);
 
     const filtered = goals.filter(g => filterStatus === 'all' || g.status === filterStatus);
 
     const handleEdit = (goal: Goal) => { setGoalToEdit(goal); setFormOpen(true); };
     const handleCreate = () => { setGoalToEdit(null); setFormOpen(true); };
+    const handleViewGoal = (goal: Goal) => { setGoalToView(goal); setViewGoalOpen(true); };
 
     const handleDelete = (goal: Goal) => {
         if (window.confirm(`Delete "${goal.title}"? This will also unlink it from all tasks.`)) {
@@ -517,6 +668,7 @@ export const GoalsPage: React.FC = () => {
 
     const handleCreatePlan = () => { setPlanToEdit(null); setPlanModalOpen(true); };
     const handleEditPlan = (plan: Plan) => { setPlanToEdit(plan); setPlanModalOpen(true); };
+    const handleViewPlan = (plan: Plan) => { setPlanToView(plan); setViewPlanOpen(true); };
     const handleDeletePlan = (plan: Plan) => {
         if (window.confirm(`Delete plan "${plan.title}"?`)) {
             deletePlan(plan.id);
@@ -610,6 +762,7 @@ export const GoalsPage: React.FC = () => {
                                 key={goal.id}
                                 goal={goal}
                                 taskCount={taskCountForGoal(goal.id)}
+                                onView={handleViewGoal}
                                 onEdit={handleEdit}
                                 onDelete={handleDelete}
                                 onStatusChange={handleStatusChange}
@@ -641,6 +794,7 @@ export const GoalsPage: React.FC = () => {
                                 <PlanCard
                                     key={plan.id}
                                     plan={plan}
+                                    onView={handleViewPlan}
                                     onEdit={handleEditPlan}
                                     onDelete={handleDeletePlan}
                                 />
@@ -652,6 +806,17 @@ export const GoalsPage: React.FC = () => {
 
             <GoalFormModal isOpen={isFormOpen} onClose={() => setFormOpen(false)} goalToEdit={goalToEdit} />
             <PlanFormModal isOpen={isPlanModalOpen} onClose={() => setPlanModalOpen(false)} planToEdit={planToEdit} />
+            <ViewGoalModal 
+                isOpen={isViewGoalOpen} 
+                onClose={() => setViewGoalOpen(false)} 
+                goal={goalToView} 
+                linkedTasks={goalToView ? getLinkedTasks(goalToView.id) : []} 
+            />
+            <ViewPlanModal 
+                isOpen={isViewPlanOpen} 
+                onClose={() => setViewPlanOpen(false)} 
+                plan={planToView} 
+            />
         </div>
     );
 };
