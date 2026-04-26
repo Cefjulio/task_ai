@@ -89,8 +89,11 @@ export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit }) =>
                             return (
                                 <span 
                                     key={tagId} 
-                                    className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider"
-                                    style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
+                                    className={cn(
+                                        "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider",
+                                        tag.color, "bg-opacity-10",
+                                        tag.color.replace('bg-', 'text-')
+                                    )}
                                 >
                                     {tag.name}
                                 </span>

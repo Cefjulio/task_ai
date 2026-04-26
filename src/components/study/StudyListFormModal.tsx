@@ -37,6 +37,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
     const [notes, setNotes] = useState('');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [priority, setPriority] = useState<StudyPriority>('medium');
+    const [status, setStatus] = useState<'pending' | 'reviewed'>('pending');
 
     useEffect(() => {
         if (isOpen) {
@@ -50,6 +51,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                 setNotes(itemToEdit.notes || '');
                 setSelectedTags(itemToEdit.tags || []);
                 setPriority(itemToEdit.priority || 'medium');
+                setStatus(itemToEdit.status === 'completed' ? 'reviewed' : (itemToEdit.status as 'pending' | 'reviewed') || 'pending');
             } else {
                 setTitle('');
                 setDescription('');
@@ -60,6 +62,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                 setNotes('');
                 setSelectedTags([]);
                 setPriority('medium');
+                setStatus('pending');
             }
         }
     }, [isOpen, itemToEdit]);
@@ -78,6 +81,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
             notes,
             tags: selectedTags,
             priority,
+            status,
         };
 
         if (itemToEdit) {
@@ -180,6 +184,39 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                                             {opt.label}
                                         </button>
                                     ))}
+                                </div>
+                            </div>
+
+                            {/* Status Toggle */}
+                            <div>
+                                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">
+                                    Status
+                                </label>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setStatus('pending')}
+                                        className={cn(
+                                            "flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border-2",
+                                            status === 'pending'
+                                                ? "bg-amber-500 border-amber-500 text-white shadow-md"
+                                                : "bg-transparent border-slate-200 dark:border-slate-700 text-slate-400 hover:border-amber-500/50 hover:text-amber-500"
+                                        )}
+                                    >
+                                        Pending
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setStatus('reviewed')}
+                                        className={cn(
+                                            "flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border-2",
+                                            status === 'reviewed'
+                                                ? "bg-primary border-primary text-white shadow-md"
+                                                : "bg-transparent border-slate-200 dark:border-slate-700 text-slate-400 hover:border-primary/50 hover:text-primary"
+                                        )}
+                                    >
+                                        Reviewed
+                                    </button>
                                 </div>
                             </div>
 
@@ -291,14 +328,12 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                                                     onClick={(e) => toggleTag(e, tag.id)}
                                                     className={cn(
                                                         "px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border-2",
-                                                        isSelected ? "shadow-sm scale-100" : "opacity-60 hover:opacity-100 scale-95"
+                                                        isSelected 
+                                                            ? `${tag.color} text-white border-transparent shadow-sm scale-100` 
+                                                            : "bg-transparent opacity-60 hover:opacity-100 scale-95 border-slate-200 dark:border-slate-700 text-slate-500"
                                                     )}
-                                                    style={{
-                                                        backgroundColor: isSelected ? tag.color : `${tag.color}20`,
-                                                        color: isSelected ? '#fff' : tag.color,
-                                                        borderColor: tag.color,
-                                                    }}
                                                 >
+                                                    {!isSelected && <div className={cn("w-2 h-2 rounded-full inline-block mr-1.5", tag.color)} />}
                                                     {tag.name}
                                                 </button>
                                             );

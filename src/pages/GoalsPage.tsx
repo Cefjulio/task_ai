@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTaskStore } from '@/store/taskStore';
 import { Goal, GoalStatus } from '@/types/Goal';
+import { Plan } from '@/types/Plan';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Target, Plus, Pencil, Trash2, CheckCircle2, Archive,
-    RotateCcw, X, Calendar, Layers
+    RotateCcw, X, Calendar, Layers, Lightbulb, Save, FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+import { cn } from '@/components/ui/Button';
 
 // ── Preset colors & emojis ──────────────────────────────────────────────────
 const PRESET_COLORS = [
@@ -43,23 +47,35 @@ interface GoalFormModalProps {
 }
 
 const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, goalToEdit }) => {
-    const { addGoal, updateGoal } = useTaskStore();
+    const { addGoal, updateGoal, tasks, linkTasksToGoal } = useTaskStore();
 
     const [title, setTitle]           = useState(goalToEdit?.title ?? '');
     const [description, setDescription] = useState(goalToEdit?.description ?? '');
     const [color, setColor]           = useState(goalToEdit?.color ?? PRESET_COLORS[0].value);
     const [emoji, setEmoji]           = useState(goalToEdit?.emoji ?? PRESET_EMOJIS[0]);
     const [targetDate, setTargetDate] = useState(goalToEdit?.targetDate ?? '');
+    const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
 
-    React.useEffect(() => {
+    const dynamicTasks = tasks.filter(t => t.category === 'dynamic');
+
+    useEffect(() => {
         if (isOpen) {
             setTitle(goalToEdit?.title ?? '');
             setDescription(goalToEdit?.description ?? '');
             setColor(goalToEdit?.color ?? PRESET_COLORS[0].value);
             setEmoji(goalToEdit?.emoji ?? PRESET_EMOJIS[0]);
             setTargetDate(goalToEdit?.targetDate ?? '');
+            setSelectedTaskIds(goalToEdit ? tasks.filter(t => t.goalId === goalToEdit.id).map(t => t.id) : []);
         }
-    }, [isOpen, goalToEdit]);
+    }, [isOpen, goalToEdit, tasks]);
+
+    const quillModules = {
+        toolbar: [
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['clean']
+        ],
+    };
 
     if (!isOpen) return null;
 
@@ -67,6 +83,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, goalToEd
         e.preventDefault();
         if (!title.trim()) { toast.error('Goal title is required'); return; }
 
+        let goalId = goalToEdit?.id;
         if (goalToEdit) {
             updateGoal(goalToEdit.id, {
                 title: title.trim(), description: description.trim(), color, emoji,
@@ -74,13 +91,25 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, goalToEd
             });
             toast.success('Goal updated!');
         } else {
-            addGoal({
+            goalId = addGoal({
                 title: title.trim(), description: description.trim(), color, emoji,
                 status: 'active', targetDate: targetDate || undefined,
             });
             toast.success('Goal created! 🎯');
         }
+
+        // Link/Unlink tasks
+        if (goalId) {
+            linkTasksToGoal(goalId, selectedTaskIds);
+        }
+
         onClose();
+    };
+
+    const toggleTaskSelection = (taskId: string) => {
+        setSelectedTaskIds(prev =>
+            prev.includes(taskId) ? prev.filter(id => id !== taskId) : [...prev, taskId]
+        );
     };
 
     return (
@@ -151,17 +180,51 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, goalToEd
                     </div>
 
                     {/* Description */}
-                    <div>
-                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                    <div className="text-black">
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                             Description <span className="normal-case font-normal text-slate-400">(optional)</span>
                         </label>
-                        <textarea
-                            value={description}
-                            onChange={e => setDescription(e.target.value)}
-                            rows={3}
-                            placeholder="What does achieving this goal mean to you?"
-                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none"
-                        />
+                        <div className="bg-slate-50 dark:bg-slate-50 border border-slate-200 rounded-xl overflow-hidden min-h-[140px]">
+                            <ReactQuill 
+                                theme="snow" 
+                                value={description} 
+                                onChange={setDescription} 
+                                modules={quillModules}
+                                className="h-24 dark:text-black"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Task Selector */}
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                            Associated Dynamic Tasks
+                        </label>
+                        <div className="max-h-48 overflow-y-auto border border-slate-100 dark:border-slate-800 rounded-xl p-2 space-y-1 custom-scrollbar">
+                            {dynamicTasks.length === 0 ? (
+                                <p className="text-xs text-slate-400 text-center py-4">No dynamic tasks available</p>
+                            ) : (
+                                dynamicTasks.map(t => {
+                                    const isSelected = selectedTaskIds.includes(t.id);
+                                    return (
+                                        <button
+                                            key={t.id}
+                                            type="button"
+                                            onClick={() => toggleTaskSelection(t.id)}
+                                            className={cn(
+                                                "w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center justify-between",
+                                                isSelected 
+                                                    ? "bg-primary/10 text-primary font-bold" 
+                                                    : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                            )}
+                                        >
+                                            <span className="truncate">{t.title}</span>
+                                            {isSelected && <CheckCircle2 className="w-4 h-4" />}
+                                        </button>
+                                    );
+                                })
+                            )}
+                        </div>
                     </div>
 
                     {/* Target date */}
@@ -234,9 +297,10 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, taskCount, onEdit, onDelete, 
 
                 {/* Description */}
                 {goal.description && (
-                    <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-4 line-clamp-2">
-                        {goal.description}
-                    </p>
+                    <div 
+                        className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-4 line-clamp-3 prose prose-sm dark:prose-invert"
+                        dangerouslySetInnerHTML={{ __html: goal.description }}
+                    />
                 )}
 
                 {/* Meta row */}
@@ -291,13 +355,150 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, taskCount, onEdit, onDelete, 
     );
 };
 
+// ── PlanCard ──────────────────────────────────────────────────────────────────
+interface PlanCardProps {
+    plan: Plan;
+    onEdit: (plan: Plan) => void;
+    onDelete: (plan: Plan) => void;
+}
+
+const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete }) => {
+    return (
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 p-6 shadow-sm hover:shadow-md transition-all group"
+        >
+            <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                        <Lightbulb className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">{plan.title}</h3>
+                </div>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => onEdit(plan)} className="p-1.5 text-slate-400 hover:text-primary rounded-lg transition-colors">
+                        <Pencil className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => onDelete(plan)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+            <div 
+                className="text-sm text-slate-600 dark:text-slate-400 prose prose-sm dark:prose-invert max-w-none line-clamp-4"
+                dangerouslySetInnerHTML={{ __html: plan.content }}
+            />
+            <div className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-800 flex justify-between items-center">
+                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+                    Last updated {format(new Date(plan.updatedAt), 'MMM d, h:mm a')}
+                </span>
+            </div>
+        </motion.div>
+    );
+};
+
+// ── PlanFormModal ─────────────────────────────────────────────────────────────
+interface PlanFormModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    planToEdit?: Plan | null;
+}
+
+const PlanFormModal: React.FC<PlanFormModalProps> = ({ isOpen, onClose, planToEdit }) => {
+    const { addPlan, updatePlan } = useTaskStore();
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+
+    React.useEffect(() => {
+        if (isOpen) {
+            setTitle(planToEdit?.title ?? '');
+            setContent(planToEdit?.content ?? '');
+        }
+    }, [isOpen, planToEdit]);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!title.trim()) return;
+
+        if (planToEdit) {
+            updatePlan(planToEdit.id, { title: title.trim(), content });
+            toast.success('Plan updated');
+        } else {
+            addPlan({ title: title.trim(), content });
+            toast.success('New plan saved!');
+        }
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <h2 className="text-xl font-bold flex items-center gap-2 dark:text-white">
+                        <Lightbulb className="w-5 h-5 text-amber-500" />
+                        {planToEdit ? 'Edit Plan' : 'New Plan/Idea'}
+                    </h2>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Title</label>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={e => setTitle(e.target.value)}
+                            placeholder="What's the idea?"
+                            className="w-full bg-slate-50 dark:bg-slate-950 border-0 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary transition-all font-semibold"
+                            required
+                        />
+                    </div>
+                    <div className="text-black">
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Content</label>
+                        <div className="bg-slate-50 dark:bg-slate-50 border border-slate-200 rounded-xl overflow-hidden min-h-[300px]">
+                            <ReactQuill 
+                                theme="snow" 
+                                value={content} 
+                                onChange={setContent} 
+                                className="h-64 dark:text-black"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4">
+                        <button type="button" onClick={onClose} className="px-6 py-2 text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" className="flex items-center gap-2 px-8 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold uppercase tracking-wider text-sm transition-all shadow-lg shadow-primary/20">
+                            <Save className="w-4 h-4" />
+                            {planToEdit ? 'Update Plan' : 'Save Plan'}
+                        </button>
+                    </div>
+                </form>
+            </motion.div>
+        </div>
+    );
+};
+
 // ── GoalsPage ─────────────────────────────────────────────────────────────────
 export const GoalsPage: React.FC = () => {
-    const { goals, tasks, updateGoal, deleteGoal } = useTaskStore();
+    const { goals, tasks, plans, updateGoal, deleteGoal, deletePlan } = useTaskStore();
 
     const [isFormOpen, setFormOpen]     = useState(false);
     const [goalToEdit, setGoalToEdit]   = useState<Goal | null>(null);
     const [filterStatus, setFilterStatus] = useState<GoalStatus | 'all'>('all');
+
+    const [isPlanModalOpen, setPlanModalOpen] = useState(false);
+    const [planToEdit, setPlanToEdit] = useState<Plan | null>(null);
 
     const taskCountForGoal = (goalId: string) =>
         tasks.filter(t => t.goalId === goalId).length;
@@ -311,6 +512,15 @@ export const GoalsPage: React.FC = () => {
         if (window.confirm(`Delete "${goal.title}"? This will also unlink it from all tasks.`)) {
             deleteGoal(goal.id);
             toast.success('Goal deleted');
+        }
+    };
+
+    const handleCreatePlan = () => { setPlanToEdit(null); setPlanModalOpen(true); };
+    const handleEditPlan = (plan: Plan) => { setPlanToEdit(plan); setPlanModalOpen(true); };
+    const handleDeletePlan = (plan: Plan) => {
+        if (window.confirm(`Delete plan "${plan.title}"?`)) {
+            deletePlan(plan.id);
+            toast.success('Plan deleted');
         }
     };
 
@@ -334,19 +544,28 @@ export const GoalsPage: React.FC = () => {
                         <Target className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Goals</h2>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">Goals & Plans</h2>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {stats.active} active · {stats.completed} completed · {stats.archived} archived
+                            {stats.active} active goals · {plans.length} notes & ideas
                         </p>
                     </div>
                 </div>
-                <button
-                    onClick={handleCreate}
-                    className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0 shrink-0"
-                >
-                    <Plus className="w-4 h-4" />
-                    New Goal
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleCreatePlan}
+                        className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-amber-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0 shrink-0"
+                    >
+                        <Lightbulb className="w-4 h-4" />
+                        New Plan
+                    </button>
+                    <button
+                        onClick={handleCreate}
+                        className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0 shrink-0"
+                    >
+                        <Plus className="w-4 h-4" />
+                        New Goal
+                    </button>
+                </div>
             </div>
 
             {/* Status filter pills */}
@@ -400,7 +619,39 @@ export const GoalsPage: React.FC = () => {
                 </motion.div>
             )}
 
+            {/* Plans Section */}
+            <div className="pt-12 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                            <Lightbulb className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Plans & Ideas</h2>
+                    </div>
+                </div>
+
+                {plans.length === 0 ? (
+                    <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/20 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">No plans or ideas saved yet. Start capturing your thoughts!</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <AnimatePresence>
+                            {plans.map(plan => (
+                                <PlanCard
+                                    key={plan.id}
+                                    plan={plan}
+                                    onEdit={handleEditPlan}
+                                    onDelete={handleDeletePlan}
+                                />
+                            ))}
+                        </AnimatePresence>
+                    </div>
+                )}
+            </div>
+
             <GoalFormModal isOpen={isFormOpen} onClose={() => setFormOpen(false)} goalToEdit={goalToEdit} />
+            <PlanFormModal isOpen={isPlanModalOpen} onClose={() => setPlanModalOpen(false)} planToEdit={planToEdit} />
         </div>
     );
 };

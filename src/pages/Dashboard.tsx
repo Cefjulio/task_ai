@@ -16,9 +16,10 @@ import { ManageTagsModal } from '@/components/tasks/ManageTagsModal';
 import { StudyListPage } from './StudyListPage';
 import { StudyListFormModal } from '@/components/study/StudyListFormModal';
 import { StudyItem } from '@/types/StudyItem';
+import { GoalsPage } from './GoalsPage';
 
 export const Dashboard: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<TabType>('dynamic');
+    const [activeTab, setActiveTab] = useState<TabType>('goals');
     const [isModalOpen, setModalOpen] = useState(false);
     const [isTagsModalOpen, setTagsModalOpen] = useState(false);
     const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
@@ -92,6 +93,12 @@ export const Dashboard: React.FC = () => {
                                         <Zap className="w-3.5 h-3.5" />
                                         New Study Item
                                     </button>
+                                ) : activeTab === 'goals' ? (
+                                    <div className="flex gap-2">
+                                        {/* GoalsPage handles its own creation button usually, but we can put a shortcut here if we want. 
+                                            Actually, GoalsPage has its own header with a "New Goal" button. 
+                                            Let's keep it consistent or leave it empty for now to avoid duplication. */}
+                                    </div>
                                 ) : activeTab === 'dynamic' ? (
                                     <button
                                         onClick={handleCreate}
@@ -127,6 +134,7 @@ export const Dashboard: React.FC = () => {
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2 }}
                     >
+                        {activeTab === 'goals' && <GoalsPage />}
                         {activeTab === 'dynamic' && <DynamicTasksPage onEdit={handleEdit} />}
                         {activeTab === 'random' && <RandomTasksPage onEdit={handleEdit} />}
                         {activeTab === 'core-tasks' && <CoreTasksPage onEdit={handleEdit} />}

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Task, SubStep, TaskStatus, Tag } from '@/types/Task';
 import { Goal } from '@/types/Goal';
+import { Plan } from '@/types/Plan';
 import { supabaseService } from '@/services/storage/supabaseService';
 import { supabase } from '@/services/supabase/supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,6 +11,7 @@ interface TaskState {
     tasks: Task[];
     tags: Tag[];
     goals: Goal[];
+    plans: Plan[];
     lastOpenedDate: string;
     selectedDate: string; // ISO string YYYY-MM-DD
     // Core Actions
@@ -29,9 +31,17 @@ interface TaskState {
     deleteTag: (id: string) => void;
 
     // Goal actions
-    addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => void;
+    addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => string; // Returns the new ID
     updateGoal: (id: string, updates: Partial<Goal>) => void;
     deleteGoal: (id: string) => void;
+
+    // Plan actions
+    addPlan: (plan: Omit<Plan, 'id' | 'createdAt' | 'updatedAt'>) => void;
+    updatePlan: (id: string, updates: Partial<Plan>) => void;
+    deletePlan: (id: string) => void;
+
+    // Task-Goal association
+    linkTasksToGoal: (goalId: string, taskIds: string[]) => void;
 
     // Queue actions
     dailyQueueSession: { date: string, taskIds: string[] } | null;
@@ -49,6 +59,7 @@ export const useTaskStore = create<TaskState>()(
             tasks: [],
             tags: [],
             goals: [],
+            plans: [],
             lastOpenedDate: new Date().toLocaleDateString('en-CA'),
             selectedDate: new Date().toLocaleDateString('en-CA'),
             dailyQueueSession: null,
@@ -261,12 +272,14 @@ export const useTaskStore = create<TaskState>()(
             },
 
             addGoal: (goalData) => {
+                const id = uuidv4();
                 const newGoal: Goal = {
                     ...goalData,
-                    id: uuidv4(),
+                    id,
                     createdAt: new Date().toISOString(),
                 };
                 set((state) => ({ goals: [...state.goals, newGoal] }));
+                return id;
             },
 
             updateGoal: (id, updates) => {
@@ -285,6 +298,45 @@ export const useTaskStore = create<TaskState>()(
                 }));
             },
 
+            addPlan: (planData) => {
+                const newPlan: Plan = {
+                    ...planData,
+                    id: uuidv4(),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                };
+                set((state) => ({ plans: [...state.plans, newPlan] }));
+            },
+
+            updatePlan: (id, updates) => {
+                set((state) => ({
+                    plans: state.plans.map((p) =>
+                        p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
+                    ),
+                }));
+            },
+
+            deletePlan: (id) => {
+                set((state) => ({
+                    plans: state.plans.filter((p) => p.id !== id),
+                }));
+            },
+
+            linkTasksToGoal: (goalId, taskIds) => {
+                set((state) => ({
+                    tasks: state.tasks.map((t) => {
+                        // If task is in taskIds, set its goalId.
+                        // If task was previously linked to this goal but NOT in taskIds, remove goalId.
+                        if (taskIds.includes(t.id)) {
+                            return { ...t, goalId };
+                        } else if (t.goalId === goalId) {
+                            return { ...t, goalId: undefined };
+                        }
+                        return t;
+                    }),
+                }));
+            },
+
             setLastOpenedDate: (dateStr) => set({ lastOpenedDate: dateStr }),
             setSelectedDate: (date) => set({ selectedDate: date }),
             setTasks: (tasks) => set({ tasks }),
@@ -296,6 +348,7 @@ export const useTaskStore = create<TaskState>()(
                 tasks: state.tasks,
                 tags: state.tags,
                 goals: state.goals,
+                plans: state.plans,
                 lastOpenedDate: state.lastOpenedDate,
                 dailyQueueSession: state.dailyQueueSession
             }), // Do NOT persist selectedDate
