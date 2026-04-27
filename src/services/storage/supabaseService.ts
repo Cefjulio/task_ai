@@ -112,6 +112,7 @@ export const supabaseService: IStorageService = {
                             lastPageRead: t.last_page_read,
                             notes: t.notes,
                             status: t.status,
+                            priority: t.priority || 'medium',
                             tags: t.tags || [],
                             createdAt: t.created_at,
                             updatedAt: t.updated_at
@@ -238,6 +239,7 @@ export const supabaseService: IStorageService = {
                             last_page_read: t.lastPageRead,
                             notes: t.notes,
                             status: t.status,
+                            priority: t.priority,
                             tags: t.tags || [],
                             created_at: t.createdAt,
                             updated_at: t.updatedAt
