@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { supabase } from '@/services/supabase/supabaseClient';
 import { useTaskStore } from '@/store/taskStore';
 import { Task, Tag, TaskStatus } from '@/types/Task';
+import { useHealthStore } from '@/store/healthStore';
+import { HealthLog, HealthTag } from '@/types/Health';
 
 export const useSupabaseRealtime = () => {
     useEffect(() => {
@@ -107,10 +109,93 @@ export const useSupabaseRealtime = () => {
             )
             .subscribe();
 
+        // 4. Subscribe to Health Logs table
+        const healthLogChannel = supabase
+            .channel('health-logs-realtime')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'health_logs' },
+                (payload) => {
+                    const { eventType, new: newRecord, old: oldRecord } = payload;
+
+                    if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                        const mappedLog: HealthLog = {
+                            id: newRecord.id,
+                            type: newRecord.type,
+                            loggedAt: newRecord.logged_at,
+                            description: newRecord.description,
+                            mediaUrl: newRecord.media_url,
+                            mealCategory: newRecord.meal_category,
+                            tags: newRecord.tags || [],
+                            waterAmount: newRecord.water_amount ? Number(newRecord.water_amount) : undefined,
+                            exerciseDuration: newRecord.exercise_duration ? Number(newRecord.exercise_duration) : undefined,
+                            exerciseIntensity: newRecord.exercise_intensity,
+                            systolic: newRecord.systolic ? Number(newRecord.systolic) : undefined,
+                            diastolic: newRecord.diastolic ? Number(newRecord.diastolic) : undefined,
+                            bloodSugar: newRecord.blood_sugar ? Number(newRecord.blood_sugar) : undefined,
+                            medicineName: newRecord.medicine_name,
+                            medicineDosage: newRecord.medicine_dosage,
+                            createdAt: newRecord.created_at,
+                            updatedAt: newRecord.updated_at
+                        };
+
+                        const existingLog = useHealthStore.getState().healthLogs.find(l => l.id === mappedLog.id);
+                        if (JSON.stringify(existingLog) !== JSON.stringify(mappedLog)) {
+                            if (eventType === 'INSERT' && !existingLog) {
+                                useHealthStore.setState((state) => ({ healthLogs: [mappedLog, ...state.healthLogs] }));
+                            } else if (existingLog) {
+                                useHealthStore.getState().updateHealthLog(mappedLog.id, mappedLog);
+                            }
+                        }
+                    } else if (eventType === 'DELETE') {
+                        useHealthStore.setState((state) => ({
+                            healthLogs: state.healthLogs.filter(l => l.id !== oldRecord.id)
+                        }));
+                    }
+                }
+            )
+            .subscribe();
+
+        // 5. Subscribe to Health Tags table
+        const healthTagChannel = supabase
+            .channel('health-tags-realtime')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'health_tags' },
+                (payload) => {
+                    const { eventType, new: newRecord, old: oldRecord } = payload;
+
+                    if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                        const mappedTag: HealthTag = {
+                            id: newRecord.id,
+                            name: newRecord.name,
+                            color: newRecord.color,
+                            createdAt: newRecord.created_at
+                        };
+
+                        const existingTag = useHealthStore.getState().healthTags.find(t => t.id === mappedTag.id);
+                        if (JSON.stringify(existingTag) !== JSON.stringify(mappedTag)) {
+                            if (eventType === 'INSERT' && !existingTag) {
+                                useHealthStore.setState((state) => ({ healthTags: [...state.healthTags, mappedTag] }));
+                            } else if (existingTag) {
+                                useHealthStore.getState().updateHealthTag(mappedTag.id, mappedTag);
+                            }
+                        }
+                    } else if (eventType === 'DELETE') {
+                        useHealthStore.setState((state) => ({
+                            healthTags: state.healthTags.filter(t => t.id !== oldRecord.id)
+                        }));
+                    }
+                }
+            )
+            .subscribe();
+
         return () => {
             supabase.removeChannel(taskChannel);
             supabase.removeChannel(tagChannel);
             supabase.removeChannel(settingsChannel);
+            supabase.removeChannel(healthLogChannel);
+            supabase.removeChannel(healthTagChannel);
         };
     }, []);
 };

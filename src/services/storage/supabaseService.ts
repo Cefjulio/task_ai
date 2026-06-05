@@ -121,6 +121,49 @@ export const supabaseService: IStorageService = {
                     version: 0
                 };
             }
+
+            if (name === 'todo-ai-health-storage') {
+                const { data: logs, error: logsError } = await supabase.from('health_logs').select('*');
+                const { data: tags, error: tagsError } = await supabase.from('health_tags').select('*');
+                
+                if (logsError) {
+                    console.error('Error fetching health logs from Supabase:', logsError);
+                }
+                if (tagsError) {
+                    console.error('Error fetching health tags from Supabase:', tagsError);
+                }
+                
+                return {
+                    state: {
+                        healthLogs: (logs || []).map((l: any) => ({
+                            id: l.id,
+                            type: l.type,
+                            loggedAt: l.logged_at,
+                            description: l.description,
+                            mediaUrl: l.media_url,
+                            mealCategory: l.meal_category,
+                            tags: l.tags || [],
+                            waterAmount: l.water_amount ? Number(l.water_amount) : undefined,
+                            exerciseDuration: l.exercise_duration ? Number(l.exercise_duration) : undefined,
+                            exerciseIntensity: l.exercise_intensity,
+                            systolic: l.systolic ? Number(l.systolic) : undefined,
+                            diastolic: l.diastolic ? Number(l.diastolic) : undefined,
+                            bloodSugar: l.blood_sugar ? Number(l.blood_sugar) : undefined,
+                            medicineName: l.medicine_name,
+                            medicineDosage: l.medicine_dosage,
+                            createdAt: l.created_at,
+                            updatedAt: l.updated_at
+                        })),
+                        healthTags: (tags || []).map((t: any) => ({
+                            id: t.id,
+                            name: t.name,
+                            color: t.color,
+                            createdAt: t.created_at
+                        }))
+                    },
+                    version: 0
+                };
+            }
         } catch (err) {
             console.error('SupabaseService.getItem critical error:', err);
         }
@@ -249,6 +292,47 @@ export const supabaseService: IStorageService = {
                     if (error) console.error('Error saving study items to Supabase:', error);
                 }
             }
+
+            if (name === 'todo-ai-health-storage') {
+                if (state.healthLogs) {
+                    const { error } = await supabase.from('health_logs').upsert(
+                        state.healthLogs.map((l: any) => ({
+                            id: l.id,
+                            type: l.type,
+                            logged_at: l.loggedAt,
+                            description: l.description,
+                            media_url: l.mediaUrl,
+                            meal_category: l.mealCategory,
+                            tags: l.tags || [],
+                            water_amount: l.waterAmount,
+                            exercise_duration: l.exerciseDuration,
+                            exercise_intensity: l.exerciseIntensity,
+                            systolic: l.systolic,
+                            diastolic: l.diastolic,
+                            blood_sugar: l.bloodSugar,
+                            medicine_name: l.medicineName,
+                            medicine_dosage: l.medicineDosage,
+                            created_at: l.createdAt,
+                            updated_at: l.updatedAt
+                        })),
+                        { onConflict: 'id' }
+                    );
+                    if (error) console.error('Error saving health logs to Supabase:', error);
+                }
+
+                if (state.healthTags) {
+                    const { error } = await supabase.from('health_tags').upsert(
+                        state.healthTags.map((t: any) => ({
+                            id: t.id,
+                            name: t.name,
+                            color: t.color,
+                            created_at: t.createdAt
+                        })),
+                        { onConflict: 'id' }
+                    );
+                    if (error) console.error('Error saving health tags to Supabase:', error);
+                }
+            }
         } catch (err) {
             console.error('SupabaseService.setItem critical error:', err);
         }
@@ -266,6 +350,10 @@ export const supabaseService: IStorageService = {
         }
         if (name === 'todo-ai-study-storage') {
             await supabase.from('study_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+        if (name === 'todo-ai-health-storage') {
+            await supabase.from('health_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            await supabase.from('health_tags').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         }
     }
 };

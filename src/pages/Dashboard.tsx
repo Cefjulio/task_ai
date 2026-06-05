@@ -17,6 +17,7 @@ import { StudyListPage } from './StudyListPage';
 import { StudyListFormModal } from '@/components/study/StudyListFormModal';
 import { StudyItem } from '@/types/StudyItem';
 import { GoalsPage } from './GoalsPage';
+import { HealthPage } from './HealthPage';
 
 export const Dashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('goals');
@@ -67,7 +68,7 @@ export const Dashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    {!isCoreTab && activeTab !== 'study-list' && (
+                    {!isCoreTab && activeTab !== 'study-list' && activeTab !== 'health' && (
                         <div className="w-full max-w-lg lg:flex-1">
                             <DateFilter />
                         </div>
@@ -83,7 +84,7 @@ export const Dashboard: React.FC = () => {
                         </button>
                         <ThemeToggle />
                         <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
-                        {!isCoreTab && (
+                        {!isCoreTab && activeTab !== 'health' && (
                             <div className="hidden xl:flex items-center gap-3">
                                 {activeTab === 'study-list' ? (
                                     <button
@@ -139,11 +140,12 @@ export const Dashboard: React.FC = () => {
                         {activeTab === 'random' && <RandomTasksPage onEdit={handleEdit} />}
                         {activeTab === 'core-tasks' && <CoreTasksPage onEdit={handleEdit} />}
                         {activeTab === 'study-list' && <StudyListPage onEdit={handleStudyEdit} />}
+                        {activeTab === 'health' && <HealthPage />}
                     </motion.div>
                 </AnimatePresence>
             </main>
 
-            {!isCoreTab && activeTab !== 'study-list' && (
+            {!isCoreTab && activeTab !== 'study-list' && activeTab !== 'health' && (
                 <FloatingActionButton onClick={handleCreate} category={currentCategory as 'dynamic' | 'random'} />
             )}
 

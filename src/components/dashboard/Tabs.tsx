@@ -1,8 +1,8 @@
 import React from 'react';
 import { cn } from '@/components/ui/Button';
-import { LayoutList, BookOpen } from 'lucide-react';
+import { LayoutList, BookOpen, Heart } from 'lucide-react';
 
-export type TabType = 'goals' | 'dynamic' | 'core-tasks' | 'random' | 'study-list';
+export type TabType = 'goals' | 'dynamic' | 'core-tasks' | 'random' | 'study-list' | 'health';
 
 interface TabsProps {
     activeTab: TabType;
@@ -68,6 +68,18 @@ export const Tabs: React.FC<TabsProps> = ({ activeTab, onTabChange }) => {
             >
                 <BookOpen className="w-4 h-4 shrink-0" />
                 Study List
+            </button>
+            <button
+                onClick={() => onTabChange('health')}
+                className={cn(
+                    'flex-1 md:w-36 py-3 px-2 text-sm font-semibold rounded-xl transition-all duration-300 ease-out flex items-center justify-center gap-2 whitespace-nowrap',
+                    activeTab === 'health'
+                        ? 'bg-white text-rose-500 shadow-md dark:bg-slate-700 dark:text-rose-400 scale-100'
+                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50 scale-[0.98]'
+                )}
+            >
+                <Heart className="w-4 h-4 shrink-0 fill-current" />
+                Health
             </button>
         </div>
     );
