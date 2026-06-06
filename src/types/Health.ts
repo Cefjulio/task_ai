@@ -1,4 +1,4 @@
-export type HealthLogType = 'meal' | 'water' | 'exercise' | 'medicine' | 'vitals';
+export type HealthLogType = 'meal' | 'water' | 'exercise' | 'medicine' | 'vitals' | 'fast';
 
 export type MealCategory = 'carbs' | 'protein' | 'fat' | 'balanced' | 'other';
 
@@ -7,6 +7,13 @@ export interface HealthTag {
     name: string;
     color: string;
     createdAt: string; // ISO string
+}
+
+export interface FastingSessionState {
+    fastingHours: number; // e.g. 16
+    eatingHours: number; // e.g. 8
+    activeFastStart: string | null; // ISO string when current fast started
+    lastFastEnd: string | null; // ISO string when last fast ended
 }
 
 export interface HealthLog {
@@ -37,4 +44,7 @@ export interface HealthLog {
     // Medicine specific
     medicineName?: string;
     medicineDosage?: string; // e.g. "1 tablet", "500mg"
+
+    // Fasting specific
+    fastingDuration?: number; // in minutes
 }

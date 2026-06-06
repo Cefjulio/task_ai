@@ -88,7 +88,13 @@ export const supabaseService: IStorageService = {
                     state: {
                         theme: data.theme,
                         soundEnabled: data.sound_enabled,
-                        bannerPhrases: data.banner_phrases
+                        bannerPhrases: data.banner_phrases,
+                        fastingState: data.fasting_state || {
+                            fastingHours: 16,
+                            eatingHours: 8,
+                            activeFastStart: null,
+                            lastFastEnd: null
+                        }
                     },
                     version: 0
                 };
@@ -151,6 +157,7 @@ export const supabaseService: IStorageService = {
                             bloodSugar: l.blood_sugar ? Number(l.blood_sugar) : undefined,
                             medicineName: l.medicine_name,
                             medicineDosage: l.medicine_dosage,
+                            fastingDuration: l.fasting_duration ? Number(l.fasting_duration) : undefined,
                             createdAt: l.created_at,
                             updatedAt: l.updated_at
                         })),
@@ -264,7 +271,8 @@ export const supabaseService: IStorageService = {
                     id: SETTINGS_SINGLETON_ID,
                     theme: state.theme,
                     sound_enabled: state.soundEnabled,
-                    banner_phrases: state.bannerPhrases
+                    banner_phrases: state.bannerPhrases,
+                    fasting_state: state.fastingState
                 }, { onConflict: 'id' });
                 if (error) console.error('Error saving settings to Supabase:', error);
             }
@@ -312,6 +320,7 @@ export const supabaseService: IStorageService = {
                             blood_sugar: l.bloodSugar,
                             medicine_name: l.medicineName,
                             medicine_dosage: l.medicineDosage,
+                            fasting_duration: l.fastingDuration,
                             created_at: l.createdAt,
                             updated_at: l.updatedAt
                         })),

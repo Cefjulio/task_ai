@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Utensils, Droplet, Activity, Heart, Pill, Edit2, Trash2, CalendarHeart } from 'lucide-react';
+import { Utensils, Droplet, Activity, Heart, Pill, Edit2, Trash2, CalendarHeart, Flame } from 'lucide-react';
 import { HealthLog } from '@/types/Health';
 import { useHealthStore } from '@/store/healthStore';
 import { cn } from '@/components/ui/Button';
@@ -63,6 +63,8 @@ export const HealthTimeline: React.FC<HealthTimelineProps> = ({ selectedDate, on
                 return { icon: Heart, bg: 'bg-rose-500 text-white shadow-rose-500/25' };
             case 'medicine':
                 return { icon: Pill, bg: 'bg-purple-500 text-white shadow-purple-500/25' };
+            case 'fast':
+                return { icon: Flame, bg: 'bg-rose-500 text-white shadow-rose-500/25' };
             default:
                 return { icon: Heart, bg: 'bg-slate-500 text-white shadow-slate-500/25' };
         }
@@ -124,13 +126,15 @@ export const HealthTimeline: React.FC<HealthTimelineProps> = ({ selectedDate, on
 
                                 {/* Action Buttons */}
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                                    <button
-                                        onClick={() => onEdit(log)}
-                                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
-                                        title="Edit entry"
-                                    >
-                                        <Edit2 className="w-3.5 h-3.5" />
-                                    </button>
+                                    {log.type !== 'fast' && (
+                                        <button
+                                            onClick={() => onEdit(log)}
+                                            className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
+                                            title="Edit entry"
+                                        >
+                                            <Edit2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
                                     <button
                                         onClick={() => handleDelete(log.id)}
                                         className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
@@ -274,6 +278,15 @@ export const HealthTimeline: React.FC<HealthTimelineProps> = ({ selectedDate, on
                                                 </span>
                                             )}
                                         </div>
+                                    </div>
+                                )}
+
+                                {/* 6. Fasting Details */}
+                                {log.type === 'fast' && log.fastingDuration && (
+                                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                                        <span className="font-extrabold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-100/20 dark:border-rose-900/30 flex items-center gap-1.5">
+                                            🔥 Fasted for {Math.floor(log.fastingDuration / 60)}h {log.fastingDuration % 60}m
+                                        </span>
                                     </div>
                                 )}
 

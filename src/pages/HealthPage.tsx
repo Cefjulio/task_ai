@@ -3,6 +3,7 @@ import { HealthTimeline } from '@/components/health/HealthTimeline';
 import { HealthInsights } from '@/components/health/HealthInsights';
 import { HealthFormModal } from '@/components/health/HealthFormModal';
 import { ManageHealthTagsModal } from '@/components/health/ManageHealthTagsModal';
+import { FastingCard } from '@/components/health/FastingCard';
 import { HealthLog } from '@/types/Health';
 import { Button } from '@/components/ui/Button';
 import { Plus, Tag, ChevronLeft, ChevronRight, Calendar, Heart } from 'lucide-react';
@@ -172,6 +173,7 @@ export const HealthPage: React.FC = () => {
                     <h3 className="text-sm font-black uppercase tracking-wider text-slate-400 pl-2">
                         Daily Metrics & Insights
                     </h3>
+                    <FastingCard />
                     <HealthInsights selectedDate={selectedDate} />
                 </div>
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useHealthStore } from '@/store/healthStore';
-import { Droplet, Activity, Heart, Pill, AlertTriangle, CheckCircle, Flame } from 'lucide-react';
+import { Droplet, Activity, Heart, Pill, AlertTriangle, CheckCircle, Flame, Clock } from 'lucide-react';
 import { cn } from '@/components/ui/Button';
 
 interface HealthInsightsProps {
@@ -24,6 +24,11 @@ export const HealthInsights: React.FC<HealthInsightsProps> = ({ selectedDate }) 
     const exerciseLogs = logsForDay.filter(log => log.type === 'exercise');
     const totalExerciseMinutes = exerciseLogs.reduce((sum, log) => sum + (log.exerciseDuration || 0), 0);
     const exerciseSessions = exerciseLogs.length;
+
+    // 2b. Fasting Stats
+    const fastingLogs = logsForDay.filter(log => log.type === 'fast');
+    const totalFastingMinutes = fastingLogs.reduce((sum, log) => sum + (log.fastingDuration || 0), 0);
+    const fastingSessions = fastingLogs.length;
 
     // 3. Medicine Stats
     const medicineLogs = logsForDay.filter(log => log.type === 'medicine');
@@ -67,6 +72,13 @@ export const HealthInsights: React.FC<HealthInsightsProps> = ({ selectedDate }) 
             return {
                 message: `Watch out! You've logged meals with caution tags: "${tagNames}". Consider monitoring your vitals (blood sugar or blood pressure) later today to see their response.`,
                 type: 'warning'
+            };
+        }
+
+        if (totalFastingMinutes >= 960) { // 16 hours or more
+            return {
+                message: `Excellent fasting discipline! You fasted for ${(totalFastingMinutes / 60).toFixed(1)} hours today. This supports metabolic flexibility, fat oxidation, and cellular cleanup (autophagy).`,
+                type: 'success'
             };
         }
 
@@ -181,7 +193,35 @@ export const HealthInsights: React.FC<HealthInsightsProps> = ({ selectedDate }) 
                     </div>
                 </div>
 
-                {/* 3. Vitals Range Card */}
+                {/* 3. Fasting Stats Card */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
+                    <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 rounded-xl bg-rose-500/10 text-rose-500">
+                                <Clock className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">Fasted Time</h4>
+                                <span className="text-xl font-black text-slate-800 dark:text-slate-100">
+                                    {Math.floor(totalFastingMinutes / 60)}h {totalFastingMinutes % 60}m
+                                </span>
+                            </div>
+                        </div>
+                        {fastingSessions > 0 && (
+                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 bg-rose-500/10 text-rose-500 rounded-lg flex items-center gap-1">
+                                <Flame className="w-3 h-3 fill-current" />
+                                {fastingSessions} Logged
+                            </span>
+                        )}
+                    </div>
+                    <div className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                        {totalFastingMinutes > 0 
+                            ? `🔥 Fasted for ${(totalFastingMinutes / 60).toFixed(1)} hours today.`
+                            : 'No completed fasts logged today.'}
+                    </div>
+                </div>
+
+                {/* 4. Vitals Range Card */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
                     <div className="flex items-center gap-2 mb-4">
                         <div className="p-2 rounded-xl bg-rose-500/10 text-rose-500">
@@ -213,8 +253,8 @@ export const HealthInsights: React.FC<HealthInsightsProps> = ({ selectedDate }) 
                     </div>
                 </div>
 
-                {/* 4. Medicines Taken Card */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
+                {/* 5. Medicines Taken Card */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm md:col-span-2">
                     <div className="flex items-center gap-2 mb-3">
                         <div className="p-2 rounded-xl bg-purple-500/10 text-purple-500">
                             <Pill className="w-5 h-5" />
