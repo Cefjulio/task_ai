@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/components/ui/Button';
-import { LayoutList, BookOpen, Heart } from 'lucide-react';
+import { Target, Zap, LayoutList, Shuffle, BookOpen, Heart } from 'lucide-react';
 
 export type TabType = 'goals' | 'dynamic' | 'core-tasks' | 'random' | 'study-list' | 'health';
 
@@ -9,78 +9,83 @@ interface TabsProps {
     onTabChange: (tab: TabType) => void;
 }
 
+const TABS: { id: TabType; label: string; shortLabel: string; icon: React.ReactNode; color: string; activeColor: string }[] = [
+    {
+        id: 'goals',
+        label: 'Goals & Plans',
+        shortLabel: 'Goals',
+        icon: <Target className="w-4 h-4" />,
+        color: 'text-violet-500',
+        activeColor: 'text-violet-600 dark:text-violet-400',
+    },
+    {
+        id: 'dynamic',
+        label: 'Dynamic',
+        shortLabel: 'Dynamic',
+        icon: <Zap className="w-4 h-4" />,
+        color: 'text-primary',
+        activeColor: 'text-primary dark:text-primary-light',
+    },
+    {
+        id: 'core-tasks',
+        label: 'Daily Core',
+        shortLabel: 'Core',
+        icon: <LayoutList className="w-4 h-4" />,
+        color: 'text-teal-500',
+        activeColor: 'text-teal-600 dark:text-teal-400',
+    },
+    {
+        id: 'random',
+        label: 'Random',
+        shortLabel: 'Random',
+        icon: <Shuffle className="w-4 h-4" />,
+        color: 'text-orange-500',
+        activeColor: 'text-orange-600 dark:text-orange-400',
+    },
+    {
+        id: 'study-list',
+        label: 'Study List',
+        shortLabel: 'Study',
+        icon: <BookOpen className="w-4 h-4" />,
+        color: 'text-indigo-500',
+        activeColor: 'text-indigo-600 dark:text-indigo-400',
+    },
+    {
+        id: 'health',
+        label: 'Health',
+        shortLabel: 'Health',
+        icon: <Heart className="w-4 h-4 fill-current" />,
+        color: 'text-rose-500',
+        activeColor: 'text-rose-600 dark:text-rose-400',
+    },
+];
+
 export const Tabs: React.FC<TabsProps> = ({ activeTab, onTabChange }) => {
     return (
-        <div className="flex p-1.5 space-x-2 bg-slate-200/50 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl mb-8 w-full md:w-auto md:inline-flex border border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto">
-            <button
-                onClick={() => onTabChange('goals')}
-                className={cn(
-                    'flex-1 md:w-36 py-3 px-2 text-sm font-semibold rounded-xl transition-all duration-300 ease-out flex items-center justify-center gap-2 whitespace-nowrap',
-                    activeTab === 'goals'
-                        ? 'bg-white text-primary shadow-md dark:bg-slate-700 dark:text-primary-light scale-100'
-                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50 scale-[0.98]'
-                )}
-            >
-                Goals & Plans
-            </button>
-            <button
-                onClick={() => onTabChange('dynamic')}
-                className={cn(
-                    'flex-1 md:w-36 py-3 px-2 text-sm font-semibold rounded-xl transition-all duration-300 ease-out whitespace-nowrap',
-                    activeTab === 'dynamic'
-                        ? 'bg-white text-primary shadow-md dark:bg-slate-700 dark:text-primary-light scale-100'
-                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50 scale-[0.98]'
-                )}
-            >
-                Dynamic Tasks
-            </button>
-            <button
-                onClick={() => onTabChange('core-tasks')}
-                className={cn(
-                    'flex-1 md:w-36 py-3 px-2 text-sm font-semibold rounded-xl transition-all duration-300 ease-out flex items-center justify-center gap-2 whitespace-nowrap',
-                    activeTab === 'core-tasks'
-                        ? 'bg-white text-primary shadow-md dark:bg-slate-700 dark:text-primary-light scale-100'
-                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50 scale-[0.98]'
-                )}
-            >
-                <LayoutList className="w-4 h-4 shrink-0" />
-                Daily Core
-            </button>
-            <button
-                onClick={() => onTabChange('random')}
-                className={cn(
-                    'flex-1 md:w-36 py-3 px-2 text-sm font-semibold rounded-xl transition-all duration-300 ease-out whitespace-nowrap',
-                    activeTab === 'random'
-                        ? 'bg-white text-primary shadow-md dark:bg-slate-700 dark:text-primary-light scale-100'
-                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50 scale-[0.98]'
-                )}
-            >
-                Random Tasks
-            </button>
-            <button
-                onClick={() => onTabChange('study-list')}
-                className={cn(
-                    'flex-1 md:w-36 py-3 px-2 text-sm font-semibold rounded-xl transition-all duration-300 ease-out flex items-center justify-center gap-2 whitespace-nowrap',
-                    activeTab === 'study-list'
-                        ? 'bg-white text-primary shadow-md dark:bg-slate-700 dark:text-primary-light scale-100'
-                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50 scale-[0.98]'
-                )}
-            >
-                <BookOpen className="w-4 h-4 shrink-0" />
-                Study List
-            </button>
-            <button
-                onClick={() => onTabChange('health')}
-                className={cn(
-                    'flex-1 md:w-36 py-3 px-2 text-sm font-semibold rounded-xl transition-all duration-300 ease-out flex items-center justify-center gap-2 whitespace-nowrap',
-                    activeTab === 'health'
-                        ? 'bg-white text-rose-500 shadow-md dark:bg-slate-700 dark:text-rose-400 scale-100'
-                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50 scale-[0.98]'
-                )}
-            >
-                <Heart className="w-4 h-4 shrink-0 fill-current" />
-                Health
-            </button>
+        <div className="w-full overflow-x-auto pb-1 -mx-1 px-1">
+            <div className="flex gap-2 min-w-max sm:min-w-0 sm:flex-wrap">
+                {TABS.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => onTabChange(tab.id)}
+                            className={cn(
+                                'flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-extrabold transition-all duration-200 whitespace-nowrap border-b-4 select-none',
+                                isActive
+                                    ? `bg-white dark:bg-slate-800 shadow-md border-slate-200 dark:border-slate-600 ${tab.activeColor} scale-105`
+                                    : 'bg-slate-100/70 dark:bg-slate-800/50 border-transparent text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 active:scale-95'
+                            )}
+                        >
+                            <span className={isActive ? tab.activeColor : 'text-slate-400 dark:text-slate-500'}>
+                                {tab.icon}
+                            </span>
+                            <span className="hidden sm:inline">{tab.label}</span>
+                            <span className="sm:hidden">{tab.shortLabel}</span>
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 };

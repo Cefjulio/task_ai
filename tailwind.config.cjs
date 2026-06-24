@@ -9,17 +9,17 @@ module.exports = {
         extend: {
             colors: {
                 primary: {
-                    DEFAULT: '#20E090',
-                    dark: '#1cbd79',
-                    light: '#b6ffdf'
+                    DEFAULT: '#1CB0F6',
+                    dark: '#0099DD',
+                    light: '#C5EAFF'
                 },
                 background: {
-                    light: '#F8FAFC',
-                    dark: '#0F172A'
+                    light: '#F0F4F8',
+                    dark: '#0D1117'
                 },
                 card: {
                     light: '#FFFFFF',
-                    dark: '#1E293B'
+                    dark: '#161B22'
                 }
             },
             fontFamily: {

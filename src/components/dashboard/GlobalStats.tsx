@@ -1,23 +1,17 @@
 import React from 'react';
 import { calculateStats } from '@/features/tasks/statsCalculator';
 import { useTaskStore } from '@/store/taskStore';
-import { Card } from '@/components/ui/Card';
 import { isTaskDueOn } from '@/features/tasks/frequencyEngine';
+import { Flame, CheckCircle2, SkipForward, TrendingUp } from 'lucide-react';
 
 export const GlobalStats: React.FC<{ activeTab: 'dynamic' | 'random' }> = ({ activeTab }) => {
     const { tasks, selectedDate, dailyQueueSession } = useTaskStore();
 
-    // Filter tasks based on current tab's domain and date
     const filteredTasks = tasks.filter(t => {
         const isDynamicPriority = ['primary', 'secondary', 'tertiary'].includes(t.priority);
         const category = t.category || (isDynamicPriority ? 'dynamic' : 'random');
         if (category !== activeTab) return false;
-
-        // Strictly filter dynamic tasks by the selected date
-        if (activeTab === 'dynamic') {
-            return isTaskDueOn(t, selectedDate);
-        }
-
+        if (activeTab === 'dynamic') return isTaskDueOn(t, selectedDate);
         return true;
     });
 
@@ -25,46 +19,78 @@ export const GlobalStats: React.FC<{ activeTab: 'dynamic' | 'random' }> = ({ act
         ? dailyQueueSession.taskIds
         : undefined;
 
-    const isRandomTab = activeTab === 'random';
-    const stats = calculateStats(filteredTasks, selectedDate, sessionTaskIds, isRandomTab);
-    // Use "Today" for dynamic (calendar-based), omit for random (backlog-based)
-    const domainLabel = activeTab === 'dynamic' ? 'Daily Core Today' : 'Random Tasks Backlog';
+    const stats = calculateStats(filteredTasks, selectedDate, sessionTaskIds, activeTab === 'random');
+    const domainLabel = activeTab === 'dynamic' ? 'Today\'s Tasks' : 'Random Tasks';
+
+    const rate = stats.completionRate;
+    const rateColor = rate >= 80 ? 'text-emerald-400' : rate >= 50 ? 'text-amber-400' : 'text-primary-light';
 
     return (
-        <Card className="relative overflow-hidden p-8 md:p-10 flex flex-col gap-8 bg-gradient-to-br from-emerald-400 via-primary to-teal-500 border-none shadow-2xl shadow-primary/20 dark:shadow-none text-white rounded-3xl group">
-            <div className="absolute top-0 right-0 -mt-16 -mr-16 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl group-hover:opacity-20 transition-opacity duration-700 pointer-events-none"></div>
-            <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-64 h-64 bg-teal-800 opacity-20 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 flex flex-col gap-6"
+            style={{
+                background: 'linear-gradient(135deg, #1a7de0 0%, #1CB0F6 50%, #0dd4f0 100%)',
+            }}
+        >
+            {/* Decorative circles */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-900/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-xl pointer-events-none" />
 
-            <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
+            {/* Top row */}
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-sm font-semibold text-white/80 uppercase tracking-widest mb-1">{domainLabel}</h2>
-                    <p className="text-6xl font-display font-extrabold tracking-tighter drop-shadow-sm">{stats.totalTasks}</p>
-                </div>
-                <div className="flex gap-6 md:gap-10 bg-black/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 shadow-inner">
-                    <div className="text-center md:text-left">
-                        <p className="text-xs font-medium opacity-80 uppercase tracking-widest mb-1">Completed</p>
-                        <p className="text-3xl font-bold tracking-tight">{stats.completedToday}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                        <Flame className="w-4 h-4 text-orange-300" />
+                        <span className="text-white/70 text-xs font-extrabold uppercase tracking-widest">{domainLabel}</span>
                     </div>
-                    <div className="w-px bg-white/20 self-stretch"></div>
-                    <div className="text-center md:text-left">
-                        <p className="text-xs font-medium opacity-80 uppercase tracking-widest mb-1">Skipped</p>
-                        <p className="text-3xl font-bold tracking-tight">{stats.skippedToday}</p>
+                    <p className="text-6xl font-black text-white tracking-tighter leading-none drop-shadow">{stats.totalTasks}</p>
+                    <p className="text-white/60 text-sm font-semibold mt-1">total tasks</p>
+                </div>
+
+                <div className="flex gap-4 sm:gap-6">
+                    <div className="text-center bg-white/15 backdrop-blur-sm rounded-2xl px-5 py-4 border border-white/20 min-w-[90px]">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-300 mx-auto mb-1" />
+                        <p className="text-3xl font-black text-white">{stats.completedToday}</p>
+                        <p className="text-white/60 text-xs font-bold uppercase tracking-wide mt-0.5">Done</p>
+                    </div>
+                    <div className="text-center bg-white/15 backdrop-blur-sm rounded-2xl px-5 py-4 border border-white/20 min-w-[90px]">
+                        <SkipForward className="w-5 h-5 text-slate-300 mx-auto mb-1" />
+                        <p className="text-3xl font-black text-white">{stats.skippedToday}</p>
+                        <p className="text-white/60 text-xs font-bold uppercase tracking-wide mt-0.5">Skipped</p>
                     </div>
                 </div>
             </div>
 
-            <div className="relative z-10 w-full mt-2">
-                <div className="flex justify-between text-sm font-medium text-white/90 mb-3">
-                    <span className="tracking-wide">Daily Completion Rate</span>
-                    <span className="font-bold text-lg">{stats.completionRate}%</span>
+            {/* XP-style progress bar */}
+            <div className="relative z-10">
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-white/80 text-xs font-extrabold uppercase tracking-widest flex items-center gap-1.5">
+                        <TrendingUp className="w-3.5 h-3.5" /> Completion Rate
+                    </span>
+                    <span className={`text-xl font-black ${rateColor}`}>{rate}%</span>
                 </div>
-                <div className="w-full bg-black/20 h-4 rounded-full overflow-hidden border border-black/10 p-0.5">
+                <div className="w-full bg-black/20 rounded-full h-4 border border-black/10 p-0.5">
                     <div
-                        className="bg-white h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(255,255,255,0.8)]"
-                        style={{ width: `${stats.completionRate}%` }}
+                        className="h-full rounded-full transition-all duration-1000 ease-out"
+                        style={{
+                            width: `${rate}%`,
+                            background: rate >= 80
+                                ? 'linear-gradient(90deg, #34d399, #10b981)'
+                                : rate >= 50
+                                ? 'linear-gradient(90deg, #fbbf24, #f59e0b)'
+                                : 'linear-gradient(90deg, #ffffff, #e0f2fe)',
+                            boxShadow: '0 0 12px rgba(255,255,255,0.4)',
+                        }}
                     />
                 </div>
+                {/* XP milestone dots */}
+                <div className="flex justify-between mt-1 px-0.5">
+                    {[25, 50, 75, 100].map(milestone => (
+                        <span key={milestone} className={`text-[10px] font-extrabold ${rate >= milestone ? 'text-white/80' : 'text-white/30'}`}>
+                            {milestone}%
+                        </span>
+                    ))}
+                </div>
             </div>
-        </Card>
+        </div>
     );
 };
