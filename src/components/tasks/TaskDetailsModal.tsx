@@ -6,6 +6,7 @@ import { SubStepItem } from './SubStepItem';
 import { useTasks } from '@/hooks/useTasks';
 import { X } from 'lucide-react';
 import { GoalBadge } from './GoalBadge';
+import { isQuillEmpty } from '@/utils/htmlUtils';
 
 interface TaskDetailsModalProps {
     isOpen: boolean;
@@ -41,8 +42,11 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onCl
                 </div>
 
                 <div className="p-5 overflow-y-auto">
-                    {task.description && (
-                        <p className="text-slate-600 dark:text-slate-300 mb-6 text-sm leading-relaxed">{task.description}</p>
+                    {task.description && !isQuillEmpty(task.description) && (
+                        <div
+                            className="text-slate-600 dark:text-slate-300 mb-6 text-sm leading-relaxed prose prose-sm max-w-none dark:prose-invert prose-ul:pl-4 prose-ol:pl-4"
+                            dangerouslySetInnerHTML={{ __html: task.description }}
+                        />
                     )}
 
                     {task.subSteps.length > 0 ? (

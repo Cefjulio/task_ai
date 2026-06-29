@@ -11,6 +11,7 @@ import { triggerConfetti, playApplause } from '@/utils/soundEffects';
 import toast from 'react-hot-toast';
 import { TaskDetailsModal } from './TaskDetailsModal';
 import { GoalBadge } from './GoalBadge';
+import { stripHtml } from '@/utils/htmlUtils';
 
 interface TaskCardProps {
     task: Task;
@@ -88,8 +89,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit }) => {
                         </div>
                     )}
 
-                    {task.description && (
-                        <p className={`text-sm mb-3 line-clamp-1 shrink-0 ${isCompleted ? 'text-amber-900/80 dark:text-yellow-200' : 'text-slate-500 dark:text-slate-400'}`}>{task.description}</p>
+                    {task.description && stripHtml(task.description) && (
+                        <p className={`text-sm mb-3 line-clamp-1 shrink-0 ${isCompleted ? 'text-amber-900/80 dark:text-yellow-200' : 'text-slate-500 dark:text-slate-400'}`}>
+                            {stripHtml(task.description)}
+                        </p>
                     )}
 
                     {task.subSteps.length > 0 && (

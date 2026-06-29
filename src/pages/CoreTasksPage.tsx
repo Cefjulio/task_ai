@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTasks } from '@/hooks/useTasks';
 import { useTaskStore } from '@/store/taskStore';
+import { stripHtml } from '@/utils/htmlUtils';
 import { Task } from '@/types/Task';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { TagFilter } from '@/components/tasks/TagFilter';
@@ -72,7 +73,7 @@ export const CoreTasksPage: React.FC<CoreTasksPageProps> = ({ onEdit }) => {
         const isDynamic = t.category === 'dynamic';
         const matchesSearch =
             t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (t.description ?? '').toLowerCase().includes(searchQuery.toLowerCase());
+            stripHtml(t.description ?? '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesTags =
             selectedTags.length === 0 || selectedTags.some(id => t.tags?.includes(id));
         return isPrimary && isDynamic && matchesSearch && matchesTags;
@@ -230,7 +231,7 @@ export const CoreTasksPage: React.FC<CoreTasksPageProps> = ({ onEdit }) => {
                                                     <td className="px-5 py-4 hidden md:table-cell">
                                                         {hasDescription ? (
                                                             <span className="text-slate-600 dark:text-slate-400 line-clamp-2 text-xs leading-relaxed">
-                                                                {task.description}
+                                                                {stripHtml(task.description ?? '')}
                                                             </span>
                                                         ) : (
                                                             <span className="text-slate-300 dark:text-slate-600 text-xs italic">No description</span>
@@ -308,9 +309,12 @@ export const CoreTasksPage: React.FC<CoreTasksPageProps> = ({ onEdit }) => {
                                                                     {/* Description */}
                                                                     <div>
                                                                         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Description</p>
-                                                                        <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                                                                            {task.description?.trim() || <span className="italic text-slate-400">None</span>}
-                                                                        </p>
+                                                                        {task.description && stripHtml(task.description).length > 0 ? (
+                                                                            <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed prose prose-sm max-w-none dark:prose-invert prose-ul:pl-4"
+                                                                                dangerouslySetInnerHTML={{ __html: task.description }} />
+                                                                        ) : (
+                                                                            <span className="italic text-slate-400">None</span>
+                                                                        )}
                                                                     </div>
 
                                                                     {/* Goal — always shown in expanded */}
