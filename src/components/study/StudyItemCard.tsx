@@ -5,6 +5,7 @@ import { useTaskStore } from '@/store/taskStore';
 import { cn } from '@/components/ui/Button';
 import { Edit2, ExternalLink, Video, FileText, Globe, Headphones, RotateCcw, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { QuillContent } from '@/components/ui/QuillContent';
 
 interface StudyItemCardProps {
     item: StudyItem;
@@ -157,7 +158,7 @@ export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit }) =>
                         className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 overflow-hidden"
                     >
                         {item.description && (
-                            <div className="mb-4 text-sm text-slate-600 dark:text-slate-300 prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: item.description }} />
+                            <QuillContent html={item.description} className="mb-4 text-sm text-slate-600 dark:text-slate-300" />
                         )}
 
                         {item.contentUrl && (
@@ -191,7 +192,7 @@ export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit }) =>
                         {item.notes && (
                             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Notes</h4>
-                                <div className="text-sm text-slate-600 dark:text-slate-300 prose prose-sm dark:prose-invert max-w-none bg-yellow-50/50 dark:bg-yellow-900/10 p-3 rounded-lg" dangerouslySetInnerHTML={{ __html: item.notes }} />
+                                <QuillContent html={item.notes} className="text-sm text-slate-600 dark:text-slate-300 bg-yellow-50/50 dark:bg-yellow-900/10 p-3 rounded-lg" />
                             </div>
                         )}
                     </motion.div>

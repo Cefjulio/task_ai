@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+import { QuillContent } from '@/components/ui/QuillContent';
 import { cn } from '@/components/ui/Button';
 
 // ── Preset colors & emojis ──────────────────────────────────────────────────
@@ -302,10 +303,7 @@ const ViewGoalModal: React.FC<ViewGoalModalProps> = ({ isOpen, onClose, goal, li
                     {goal.description && (
                         <section>
                             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Goal Description</h3>
-                            <div 
-                                className="text-slate-600 dark:text-slate-300 prose prose-slate dark:prose-invert max-w-none"
-                                dangerouslySetInnerHTML={{ __html: goal.description }}
-                            />
+                            <QuillContent html={goal.description} className="text-slate-600 dark:text-slate-300" />
                         </section>
                     )}
 
@@ -383,10 +381,7 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, taskCount, onView, onEdit, on
 
                 {/* Description */}
                 {goal.description && (
-                    <div 
-                        className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-4 line-clamp-3 prose prose-sm dark:prose-invert"
-                        dangerouslySetInnerHTML={{ __html: goal.description }}
-                    />
+                    <QuillContent html={goal.description} className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-4 line-clamp-3" />
                 )}
 
                 {/* Meta row */}

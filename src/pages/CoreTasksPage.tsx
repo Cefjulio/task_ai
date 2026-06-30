@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTasks } from '@/hooks/useTasks';
 import { useTaskStore } from '@/store/taskStore';
 import { stripHtml } from '@/utils/htmlUtils';
+import { QuillContent } from '@/components/ui/QuillContent';
 import { Task } from '@/types/Task';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { TagFilter } from '@/components/tasks/TagFilter';
@@ -290,8 +291,7 @@ export const CoreTasksPage: React.FC<CoreTasksPageProps> = ({ onEdit }) => {
                                                                     <div>
                                                                         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Description</p>
                                                                         {task.description && stripHtml(task.description).length > 0 ? (
-                                                                            <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed prose prose-sm max-w-none dark:prose-invert prose-ul:pl-4"
-                                                                                dangerouslySetInnerHTML={{ __html: task.description }} />
+                                                                            <QuillContent html={task.description} className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed" />
                                                                         ) : (
                                                                             <span className="italic text-slate-400">None</span>
                                                                         )}

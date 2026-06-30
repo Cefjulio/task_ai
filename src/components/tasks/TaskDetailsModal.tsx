@@ -8,6 +8,7 @@ import { X, Repeat } from 'lucide-react';
 import { GoalBadge } from './GoalBadge';
 import { isQuillEmpty } from '@/utils/htmlUtils';
 import { getRecurrenceLabel } from '@/utils/frequencyLabel';
+import { QuillContent } from '@/components/ui/QuillContent';
 
 interface TaskDetailsModalProps {
     isOpen: boolean;
@@ -44,9 +45,9 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onCl
 
                 <div className="p-5 overflow-y-auto overflow-x-hidden custom-scrollbar">
                     {task.description && !isQuillEmpty(task.description) && (
-                        <div
-                            className="text-slate-600 dark:text-slate-300 mb-6 text-sm leading-relaxed prose prose-sm max-w-none dark:prose-invert prose-ul:pl-4 prose-ol:pl-4 break-words [overflow-wrap:anywhere]"
-                            dangerouslySetInnerHTML={{ __html: task.description }}
+                        <QuillContent
+                            html={task.description}
+                            className="text-slate-600 dark:text-slate-300 mb-6 leading-relaxed"
                         />
                     )}
 

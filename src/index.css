@@ -53,6 +53,22 @@
   font-style: normal !important;
   font-size: 14px;
 }
+/* Read-only display of saved Quill HTML (outside the editor / no toolbar).
+   List bullet & number markers (li[data-list] > .ql-ui::before) only render
+   inside .ql-editor, so we reuse that class but strip editor-only chrome. */
+.ql-editor.ql-display {
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  overflow: visible;
+  font-size: 14px;
+}
+.ql-editor.ql-display p {
+  margin-bottom: 0.5em;
+}
+.ql-editor.ql-display p:last-child {
+  margin-bottom: 0;
+}
 /* Toolbar button colours */
 .ql-toolbar .ql-stroke { stroke: #64748b; }
 .ql-toolbar .ql-fill  { fill:   #64748b; }
