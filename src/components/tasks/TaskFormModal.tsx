@@ -3,7 +3,7 @@ import ReactQuill from 'react-quill-new';
 import { Task, TaskPriority, TaskFrequency } from '@/types/Task';
 import { useTaskStore } from '@/store/taskStore';
 import { useTasks } from '@/hooks/useTasks';
-import { X, Target, Zap, Shuffle, Star, AlignLeft, Tag, Repeat } from 'lucide-react';
+import { X, Zap, Shuffle, Star, AlignLeft, Tag, Repeat } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { isQuillEmpty, parseListItems, toQuillBulletList } from '@/utils/htmlUtils';
 
@@ -29,7 +29,7 @@ const TOOLBAR_LIST = [
 
 export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, taskToEdit, defaultCategory = 'dynamic' }) => {
     const { addTask, updateTask } = useTasks();
-    const { tags, goals } = useTaskStore();
+    const { tags } = useTaskStore();
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -271,28 +271,6 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
                                     </select>
                                 </div>
                             )}
-                        </div>
-                    )}
-
-                    {/* Goal selector */}
-                    {goals.filter(g => g.status === 'active').length > 0 && (
-                        <div>
-                            <label className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">
-                                <Target className="w-3.5 h-3.5 text-primary" /> Goal
-                                <span className="text-slate-300 dark:text-slate-600 font-normal normal-case tracking-normal text-xs">optional</span>
-                            </label>
-                            <div className="flex flex-wrap gap-2">
-                                <button type="button" onClick={() => setSelectedGoalId('')}
-                                    className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 border-b-4 transition-all ${!selectedGoalId ? 'bg-slate-700 border-slate-800 text-white' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'}`}>
-                                    None
-                                </button>
-                                {goals.filter(g => g.status === 'active').map(goal => (
-                                    <button key={goal.id} type="button" onClick={() => setSelectedGoalId(goal.id)}
-                                        className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 border-b-4 flex items-center gap-1.5 transition-all ${selectedGoalId === goal.id ? `${goal.color} text-white shadow-sm` : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'}`}>
-                                        <span>{goal.emoji}</span><span>{goal.title}</span>
-                                    </button>
-                                ))}
-                            </div>
                         </div>
                     )}
 
