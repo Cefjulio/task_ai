@@ -4,9 +4,10 @@ import { getTaskProgress, getTaskStepStats } from '@/utils/taskHelpers';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { SubStepItem } from './SubStepItem';
 import { useTasks } from '@/hooks/useTasks';
-import { X } from 'lucide-react';
+import { X, Repeat } from 'lucide-react';
 import { GoalBadge } from './GoalBadge';
 import { isQuillEmpty } from '@/utils/htmlUtils';
+import { getRecurrenceLabel } from '@/utils/frequencyLabel';
 
 interface TaskDetailsModalProps {
     isOpen: boolean;
@@ -47,6 +48,18 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onCl
                             className="text-slate-600 dark:text-slate-300 mb-6 text-sm leading-relaxed prose prose-sm max-w-none dark:prose-invert prose-ul:pl-4 prose-ol:pl-4"
                             dangerouslySetInnerHTML={{ __html: task.description }}
                         />
+                    )}
+
+                    {task.frequency && (
+                        <div className="mb-6 flex items-center gap-2.5 bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl px-4 py-3">
+                            <div className="w-8 h-8 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center shrink-0">
+                                <Repeat className="w-4 h-4 text-primary" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-extrabold uppercase tracking-widest text-primary/70 dark:text-primary-light/70">Frequency</p>
+                                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{getRecurrenceLabel(task)}</p>
+                            </div>
+                        </div>
                     )}
 
                     {task.subSteps.length > 0 ? (
