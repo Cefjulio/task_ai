@@ -140,7 +140,7 @@ export const StudyListFormModal: React.FC<StudyListFormModalProps> = ({
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
                         <form id="study-form" onSubmit={handleSave} className="space-y-6">
                             
                             {/* Title */}

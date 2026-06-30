@@ -184,7 +184,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
                 </div>
 
                 {/* ── Scrollable body ── */}
-                <div className="modal-body-scroll flex-1 overflow-y-auto px-5 py-4 space-y-5 custom-scrollbar">
+                <div className="modal-body-scroll flex-1 overflow-y-auto overflow-x-hidden px-5 py-4 space-y-5 custom-scrollbar">
 
                     {/* Title */}
                     <div>
