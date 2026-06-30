@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQueue } from '@/hooks/useQueue';
 import { ChevronDown, ChevronUp, Layers, Edit2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { stripHtml } from '@/utils/htmlUtils';
 
 interface QueuedTasksBacklogProps {
     onEdit: (task: any) => void;
@@ -81,8 +82,8 @@ export const QueuedTasksBacklog: React.FC<QueuedTasksBacklogProps> = ({ onEdit, 
                                                     </button>
                                                 </div>
                                             </div>
-                                            {t.description && (
-                                                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate opacity-80">{t.description}</p>
+                                            {t.description && stripHtml(t.description) && (
+                                                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate opacity-80">{stripHtml(t.description)}</p>
                                             )}
                                         </div>
                                     </div>
