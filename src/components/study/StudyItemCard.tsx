@@ -3,13 +3,15 @@ import { StudyItem } from '@/types/StudyItem';
 import { useStudyStore } from '@/store/studyStore';
 import { useTaskStore } from '@/store/taskStore';
 import { cn } from '@/components/ui/Button';
-import { Edit2, ExternalLink, Video, FileText, Globe, Headphones, RotateCcw, CheckCircle } from 'lucide-react';
+import { Edit2, ExternalLink, Video, FileText, Globe, Headphones, RotateCcw, CheckCircle, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QuillContent } from '@/components/ui/QuillContent';
 
 interface StudyItemCardProps {
     item: StudyItem;
     onEdit: (item: StudyItem) => void;
+    onStudyNow?: (item: StudyItem) => void;
+    isActive?: boolean;
 }
 
 const PRIORITY_STYLES: Record<string, { label: string; bg: string; text: string; dot: string }> = {
@@ -18,7 +20,7 @@ const PRIORITY_STYLES: Record<string, { label: string; bg: string; text: string;
     low:    { label: 'Low',    bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-600 dark:text-green-400', dot: 'bg-green-500' },
 };
 
-export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit }) => {
+export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit, onStudyNow, isActive }) => {
     const { markStudyItemStatus } = useStudyStore();
     const { tags } = useTaskStore();
     const [expanded, setExpanded] = useState(false);
@@ -58,8 +60,11 @@ export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit }) =>
         <div 
             onClick={() => setExpanded(!expanded)}
             className={cn(
-                "group relative bg-white dark:bg-slate-900 border overflow-hidden p-5 transition-all duration-300 shadow-sm cursor-pointer border-slate-200 dark:border-slate-800",
+                "group relative bg-white dark:bg-slate-900 border overflow-hidden p-5 transition-all duration-300 shadow-sm cursor-pointer",
                 expanded ? "rounded-2xl" : "rounded-xl hover:-translate-y-1 hover:shadow-md",
+                isActive
+                    ? "border-primary/50 ring-2 ring-primary/30 ring-offset-2 dark:ring-offset-slate-950"
+                    : "border-slate-200 dark:border-slate-800",
                 isReviewed && "bg-slate-50 dark:bg-slate-900/50 border-teal-200 dark:border-teal-900/50 opacity-80"
             )}
         >
@@ -114,6 +119,21 @@ export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit }) =>
                     </div>
 
                     <div className="flex items-center gap-1 mt-2">
+                        {onStudyNow && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onStudyNow(item); }}
+                                className={cn(
+                                    "flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-extrabold transition-colors",
+                                    isActive
+                                        ? "bg-primary text-white"
+                                        : "bg-primary/10 text-primary hover:bg-primary/20"
+                                )}
+                                title="Study This Now"
+                            >
+                                <Play className="w-3 h-3" />
+                                {isActive ? 'Active' : 'Study'}
+                            </button>
+                        )}
                         <button
                             onClick={(e) => { e.stopPropagation(); onEdit(item); }}
                             className="p-1.5 text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"

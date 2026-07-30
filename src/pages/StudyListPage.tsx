@@ -2,10 +2,14 @@ import React, { useMemo, useState } from 'react';
 import { useStudyStore } from '@/store/studyStore';
 import { useTaskStore } from '@/store/taskStore';
 import { StudyItemCard } from '@/components/study/StudyItemCard';
+import { RouletteHero } from '@/components/study/RouletteHero';
+import { ActiveStudyBanner } from '@/components/study/ActiveStudyBanner';
+import { ProgressLogModal } from '@/components/study/ProgressLogModal';
 import { StudyItem, StudyPriority } from '@/types/StudyItem';
 import { Search, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/Button';
+import { playLevelUp, resumeAudio, triggerConfetti } from '@/utils/soundEffects';
 
 interface StudyListPageProps {
     onEdit: (item: StudyItem) => void;
@@ -23,12 +27,38 @@ const PRIORITY_FILTERS: { value: PriorityFilter; label: string; dot: string }[] 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
 export const StudyListPage: React.FC<StudyListPageProps> = ({ onEdit }) => {
-    const { studyItems } = useStudyStore();
+    const { studyItems, markStudyItemStatus } = useStudyStore();
     const { tags } = useTaskStore();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
     const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
+    const [activeStudyItem, setActiveStudyItem] = useState<StudyItem | null>(null);
+    const [progressModalItem, setProgressModalItem] = useState<StudyItem | null>(null);
+
+    const handleStudyNow = (item: StudyItem) => {
+        resumeAudio();
+        setActiveStudyItem(item);
+        // Scroll to top of the study area
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleMarkDone = () => {
+        if (!activeStudyItem) return;
+        resumeAudio();
+        markStudyItemStatus(activeStudyItem.id, 'reviewed');
+        playLevelUp();
+        triggerConfetti();
+        setActiveStudyItem(null);
+    };
+
+    const handleProgressSaved = () => {
+        // Refresh active item from store after save
+        if (activeStudyItem) {
+            const updated = studyItems.find(i => i.id === activeStudyItem.id);
+            if (updated) setActiveStudyItem(updated);
+        }
+    };
 
     const filteredItems = useMemo(() => {
         let items = studyItems;
@@ -46,7 +76,6 @@ export const StudyListPage: React.FC<StudyListPageProps> = ({ onEdit }) => {
             items = items.filter(t => (t.priority || 'medium') === priorityFilter);
         }
 
-        // Sort: pending before reviewed, then by priority (high > medium > low), then by updated date
         return [...items].sort((a, b) => {
             const aReviewed = a.status === 'reviewed' || a.status === 'completed';
             const bReviewed = b.status === 'reviewed' || b.status === 'completed';
@@ -60,15 +89,37 @@ export const StudyListPage: React.FC<StudyListPageProps> = ({ onEdit }) => {
     }, [studyItems, searchQuery, selectedTagFilter, priorityFilter]);
 
     return (
-        <div className="space-y-6">
-            {/* Search + Priority Filters row */}
-            <div className="flex flex-col gap-4 mb-2">
+        <div className="space-y-5">
+            {/* Roulette hero */}
+            <RouletteHero items={studyItems} onStudyNow={handleStudyNow} />
+
+            {/* Active study banner */}
+            <AnimatePresence>
+                {activeStudyItem && (
+                    <ActiveStudyBanner
+                        item={activeStudyItem}
+                        onUpdateProgress={() => setProgressModalItem(activeStudyItem)}
+                        onMarkDone={handleMarkDone}
+                        onDismiss={() => setActiveStudyItem(null)}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Section divider */}
+            <div className="flex items-center gap-3 pt-1">
+                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+                <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">Your Library</span>
+                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+            </div>
+
+            {/* Search + filters */}
+            <div className="flex flex-col gap-4">
                 <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                     <div className="relative w-full md:w-96">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <input
                             type="text"
-                            placeholder="Search items..."
+                            placeholder="Search library…"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl pl-12 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all dark:text-white"
@@ -81,7 +132,7 @@ export const StudyListPage: React.FC<StudyListPageProps> = ({ onEdit }) => {
                             onClick={() => setSelectedTagFilter(null)}
                             className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
                                 selectedTagFilter === null
-                                    ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 shadow-md scale-100'
+                                    ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 shadow-md'
                                     : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 scale-95 border border-slate-200 dark:border-slate-700'
                             }`}
                         >
@@ -126,13 +177,14 @@ export const StudyListPage: React.FC<StudyListPageProps> = ({ onEdit }) => {
                 </div>
             </div>
 
+            {/* Item grid */}
             {filteredItems.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
                     <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
                         <Info className="w-10 h-10 text-slate-400" />
                     </div>
                     <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">No items found</h3>
-                    <p className="text-slate-500 max-w-md">Try adjusting your filters or click the button down below to add a new study item.</p>
+                    <p className="text-slate-500 max-w-md">Try adjusting your filters or click the + button to add a new study item.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -144,14 +196,30 @@ export const StudyListPage: React.FC<StudyListPageProps> = ({ onEdit }) => {
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
-                                transition={{ duration: 0.2, delay: index * 0.05 }}
+                                transition={{ duration: 0.2, delay: index * 0.04 }}
                             >
-                                <StudyItemCard item={item} onEdit={onEdit} />
+                                <StudyItemCard
+                                    item={item}
+                                    onEdit={onEdit}
+                                    onStudyNow={handleStudyNow}
+                                    isActive={activeStudyItem?.id === item.id}
+                                />
                             </motion.div>
                         ))}
                     </AnimatePresence>
                 </div>
             )}
+
+            {/* Progress log modal */}
+            <AnimatePresence>
+                {progressModalItem && (
+                    <ProgressLogModal
+                        item={progressModalItem}
+                        onClose={() => setProgressModalItem(null)}
+                        onSaved={handleProgressSaved}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 };

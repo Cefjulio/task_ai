@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/components/ui/Button';
-import { Target, Zap, LayoutList, Shuffle, BookOpen, Heart } from 'lucide-react';
+import { Target, Zap, LayoutList, Shuffle, Dices, Heart } from 'lucide-react';
 
 export type TabType = 'goals' | 'dynamic' | 'core-tasks' | 'random' | 'study-list' | 'health';
 
@@ -44,9 +44,9 @@ const TABS: { id: TabType; label: string; shortLabel: string; icon: React.ReactN
     },
     {
         id: 'study-list',
-        label: 'Study List',
-        shortLabel: 'Study',
-        icon: <BookOpen className="w-4 h-4" />,
+        label: 'Study Roulette',
+        shortLabel: 'Roulette',
+        icon: <Dices className="w-4 h-4" />,
         color: 'text-indigo-500',
         activeColor: 'text-indigo-600 dark:text-indigo-400',
     },
