@@ -102,6 +102,11 @@ export const supabaseService: IStorageService = {
 
             if (name === 'todo-ai-study-storage') {
                 const { data: studyItems, error } = await supabase.from('study_items').select('*');
+                const { data: settings } = await supabase
+                    .from('settings')
+                    .select('pinned_study_ids')
+                    .eq('id', SETTINGS_SINGLETON_ID)
+                    .maybeSingle();
                 if (error) {
                     console.error('Error fetching study items from Supabase:', error);
                     return null;
@@ -122,7 +127,8 @@ export const supabaseService: IStorageService = {
                             tags: t.tags || [],
                             createdAt: t.created_at,
                             updatedAt: t.updated_at
-                        }))
+                        })),
+                        pinnedItemIds: settings?.pinned_study_ids || []
                     },
                     version: 0
                 };
@@ -299,6 +305,11 @@ export const supabaseService: IStorageService = {
                     );
                     if (error) console.error('Error saving study items to Supabase:', error);
                 }
+                // Persist pinned IDs to the settings singleton so they sync across devices
+                await supabase.from('settings').upsert({
+                    id: SETTINGS_SINGLETON_ID,
+                    pinned_study_ids: state.pinnedItemIds || []
+                }, { onConflict: 'id' });
             }
 
             if (name === 'todo-ai-health-storage') {
