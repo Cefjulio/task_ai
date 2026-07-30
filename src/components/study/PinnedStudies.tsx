@@ -23,7 +23,7 @@ const PinnedCard: React.FC<{
     onUnpin: () => void;
     onStudyNow: () => void;
 }> = ({ item, onUpdateProgress, onUnpin, onStudyNow }) => (
-    <div className="flex-1 min-w-0 bg-white dark:bg-slate-900 border-2 border-amber-200 dark:border-amber-800/50 rounded-2xl p-4 shadow-sm">
+    <div className="w-full sm:w-72 shrink-0 bg-white dark:bg-slate-900 border-2 border-amber-200 dark:border-amber-800/50 rounded-2xl p-4 shadow-sm">
         {/* Title row */}
         <div className="flex items-start gap-2 mb-2">
             <div className="shrink-0 mt-0.5">{CONTENT_ICONS[item.contentType]}</div>
@@ -100,10 +100,7 @@ export const PinnedStudies: React.FC<PinnedStudiesProps> = ({
             </div>
 
             {/* Cards */}
-            <div className={cn(
-                "flex gap-3",
-                items.length === 1 ? "max-w-xs" : "flex-col sm:flex-row"
-            )}>
+            <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
                 {items.map(item => (
                     <PinnedCard
                         key={item.id}
@@ -116,7 +113,7 @@ export const PinnedStudies: React.FC<PinnedStudiesProps> = ({
 
                 {/* Empty slot placeholder */}
                 {items.length === 1 && (
-                    <div className="flex-1 min-w-0 border-2 border-dashed border-amber-200 dark:border-amber-800/40 rounded-2xl p-4 flex items-center justify-center">
+                    <div className="w-full sm:w-72 shrink-0 border-2 border-dashed border-amber-200 dark:border-amber-800/40 rounded-2xl p-4 flex items-center justify-center">
                         <p className="text-[11px] text-slate-400 text-center">
                             Pin one more item<br />from your library below
                         </p>
