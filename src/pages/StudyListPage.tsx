@@ -5,6 +5,7 @@ import { StudyItemCard } from '@/components/study/StudyItemCard';
 import { RouletteHero } from '@/components/study/RouletteHero';
 import { ActiveStudyBanner } from '@/components/study/ActiveStudyBanner';
 import { ProgressLogModal } from '@/components/study/ProgressLogModal';
+import { PinnedStudies } from '@/components/study/PinnedStudies';
 import { StudyItem, StudyPriority } from '@/types/StudyItem';
 import { Search, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,7 +28,7 @@ const PRIORITY_FILTERS: { value: PriorityFilter; label: string; dot: string }[] 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
 export const StudyListPage: React.FC<StudyListPageProps> = ({ onEdit }) => {
-    const { studyItems, markStudyItemStatus } = useStudyStore();
+    const { studyItems, markStudyItemStatus, deleteStudyItem, pinnedItemIds, pinItem, unpinItem } = useStudyStore();
     const { tags } = useTaskStore();
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -35,6 +36,23 @@ export const StudyListPage: React.FC<StudyListPageProps> = ({ onEdit }) => {
     const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
     const [activeStudyItem, setActiveStudyItem] = useState<StudyItem | null>(null);
     const [progressModalItem, setProgressModalItem] = useState<StudyItem | null>(null);
+
+    const pinnedItems = pinnedItemIds
+        .map(id => studyItems.find(i => i.id === id))
+        .filter(Boolean) as StudyItem[];
+
+    const handleDelete = (item: StudyItem) => {
+        if (activeStudyItem?.id === item.id) setActiveStudyItem(null);
+        deleteStudyItem(item.id);
+    };
+
+    const handleTogglePin = (item: StudyItem) => {
+        if (pinnedItemIds.includes(item.id)) {
+            unpinItem(item.id);
+        } else {
+            pinItem(item.id);
+        }
+    };
 
     const handleStudyNow = (item: StudyItem) => {
         resumeAudio();
@@ -90,6 +108,16 @@ export const StudyListPage: React.FC<StudyListPageProps> = ({ onEdit }) => {
 
     return (
         <div className="space-y-5">
+            {/* Pinned daily focus items */}
+            {pinnedItems.length > 0 && (
+                <PinnedStudies
+                    items={pinnedItems}
+                    onUpdateProgress={item => setProgressModalItem(item)}
+                    onUnpin={unpinItem}
+                    onStudyNow={handleStudyNow}
+                />
+            )}
+
             {/* Roulette hero */}
             <RouletteHero items={studyItems} onStudyNow={handleStudyNow} />
 
@@ -201,8 +229,12 @@ export const StudyListPage: React.FC<StudyListPageProps> = ({ onEdit }) => {
                                 <StudyItemCard
                                     item={item}
                                     onEdit={onEdit}
+                                    onDelete={handleDelete}
                                     onStudyNow={handleStudyNow}
+                                    onTogglePin={handleTogglePin}
                                     isActive={activeStudyItem?.id === item.id}
+                                    isPinned={pinnedItemIds.includes(item.id)}
+                                    canPin={pinnedItemIds.length < 2 || pinnedItemIds.includes(item.id)}
                                 />
                             </motion.div>
                         ))}

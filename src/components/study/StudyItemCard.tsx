@@ -3,15 +3,19 @@ import { StudyItem } from '@/types/StudyItem';
 import { useStudyStore } from '@/store/studyStore';
 import { useTaskStore } from '@/store/taskStore';
 import { cn } from '@/components/ui/Button';
-import { Edit2, ExternalLink, Video, FileText, Globe, Headphones, RotateCcw, CheckCircle, Play } from 'lucide-react';
+import { Edit2, ExternalLink, Video, FileText, Globe, Headphones, RotateCcw, CheckCircle, Play, Trash2, Pin, PinOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QuillContent } from '@/components/ui/QuillContent';
 
 interface StudyItemCardProps {
     item: StudyItem;
     onEdit: (item: StudyItem) => void;
+    onDelete?: (item: StudyItem) => void;
     onStudyNow?: (item: StudyItem) => void;
+    onTogglePin?: (item: StudyItem) => void;
     isActive?: boolean;
+    isPinned?: boolean;
+    canPin?: boolean; // false when already 2 pinned and this one isn't pinned
 }
 
 const PRIORITY_STYLES: Record<string, { label: string; bg: string; text: string; dot: string }> = {
@@ -20,10 +24,13 @@ const PRIORITY_STYLES: Record<string, { label: string; bg: string; text: string;
     low:    { label: 'Low',    bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-600 dark:text-green-400', dot: 'bg-green-500' },
 };
 
-export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit, onStudyNow, isActive }) => {
+export const StudyItemCard: React.FC<StudyItemCardProps> = ({
+    item, onEdit, onDelete, onStudyNow, onTogglePin, isActive, isPinned, canPin = true,
+}) => {
     const { markStudyItemStatus } = useStudyStore();
     const { tags } = useTaskStore();
     const [expanded, setExpanded] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(false);
 
     // Support both 'reviewed' (new) and 'completed' (legacy) as the "done" state
     const isReviewed = item.status === 'reviewed' || item.status === 'completed';
@@ -75,6 +82,11 @@ export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit, onSt
                         <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 truncate">
                             {item.title}
                         </h3>
+                        {isPinned && (
+                            <span className="shrink-0 inline-flex items-center gap-0.5 text-[9px] font-extrabold uppercase tracking-wider text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
+                                <Pin className="w-2.5 h-2.5" /> Pinned
+                            </span>
+                        )}
                     </div>
 
                     {/* Priority badge + tags */}
@@ -118,7 +130,8 @@ export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit, onSt
                         </span>
                     </div>
 
-                    <div className="flex items-center gap-1 mt-2">
+                    <div className="flex items-center flex-wrap gap-1 mt-2">
+                        {/* Study Now */}
                         {onStudyNow && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); onStudyNow(item); }}
@@ -134,20 +147,69 @@ export const StudyItemCard: React.FC<StudyItemCardProps> = ({ item, onEdit, onSt
                                 {isActive ? 'Active' : 'Study'}
                             </button>
                         )}
+
+                        {/* Pin / Unpin */}
+                        {onTogglePin && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onTogglePin(item); }}
+                                disabled={!canPin && !isPinned}
+                                className={cn(
+                                    "p-1.5 rounded-lg transition-colors",
+                                    isPinned
+                                        ? "text-amber-500 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100"
+                                        : canPin
+                                            ? "text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                            : "text-slate-300 dark:text-slate-600 cursor-not-allowed"
+                                )}
+                                title={isPinned ? 'Unpin' : canPin ? 'Pin as daily focus' : 'Already 2 items pinned'}
+                            >
+                                {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                            </button>
+                        )}
+
+                        {/* Edit */}
                         <button
                             onClick={(e) => { e.stopPropagation(); onEdit(item); }}
                             className="p-1.5 text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                            title="Edit Item"
+                            title="Edit"
                         >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                        
+
+                        {/* Delete with inline confirm */}
+                        {onDelete && (
+                            confirmDelete ? (
+                                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                    <button
+                                        onClick={() => { onDelete(item); setConfirmDelete(false); }}
+                                        className="px-2 py-1.5 rounded-lg text-xs font-extrabold bg-red-500 text-white hover:bg-red-600 transition-colors"
+                                    >
+                                        Delete?
+                                    </button>
+                                    <button
+                                        onClick={() => setConfirmDelete(false)}
+                                        className="px-2 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
+                                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                    title="Delete"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                            )
+                        )}
+
                         {/* Reviewed / Pending toggle */}
                         <button
                             onClick={toggleStatus}
                             className={cn(
                                 "p-1.5 rounded-lg transition-colors flex flex-row items-center gap-1 px-2 text-xs font-bold",
-                                isReviewed 
+                                isReviewed
                                     ? "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600"
                                     : "bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-teal-900/50"
                             )}

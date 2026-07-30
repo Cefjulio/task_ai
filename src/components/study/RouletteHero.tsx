@@ -24,6 +24,7 @@ export const RouletteHero: React.FC<RouletteHeroProps> = ({ items, onStudyNow })
     const [revealed, setRevealed] = useState<StudyItem | null>(null);
 
     const pendingItems = items.filter(i => i.status !== 'reviewed' && i.status !== 'completed');
+    const reviewedCount = items.length - pendingItems.length;
 
     const roll = useCallback(() => {
         if (!pendingItems.length || phase === 'rolling') return;
@@ -66,9 +67,19 @@ export const RouletteHero: React.FC<RouletteHeroProps> = ({ items, onStudyNow })
                 <h2 className="text-2xl sm:text-3xl font-black text-white mb-1.5 drop-shadow">
                     What will you study today?
                 </h2>
-                <p className="text-white/65 text-sm mb-7">
-                    {pendingItems.length} item{pendingItems.length !== 1 ? 's' : ''} waiting · spin the wheel!
-                </p>
+                <div className="flex items-center gap-3 mb-7">
+                    <span className="text-white/80 text-sm font-bold">
+                        {pendingItems.length} item{pendingItems.length !== 1 ? 's' : ''} in play
+                    </span>
+                    {reviewedCount > 0 && (
+                        <>
+                            <span className="text-white/30">·</span>
+                            <span className="text-white/50 text-xs">
+                                {reviewedCount} reviewed (excluded)
+                            </span>
+                        </>
+                    )}
+                </div>
 
                 <AnimatePresence mode="wait">
                     {phase !== 'revealed' && (

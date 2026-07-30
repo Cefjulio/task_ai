@@ -7,18 +7,22 @@ import { supabase } from '../services/supabase/supabaseClient';
 
 interface StudyState {
     studyItems: StudyItem[];
-    
+    pinnedItemIds: string[]; // max 2
+
     // Actions
     addStudyItem: (item: Omit<StudyItem, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => void;
     updateStudyItem: (id: string, updates: Partial<StudyItem>) => void;
     deleteStudyItem: (id: string) => void;
     markStudyItemStatus: (id: string, status: StudyStatus) => void;
+    pinItem: (id: string) => void;
+    unpinItem: (id: string) => void;
 }
 
 export const useStudyStore = create<StudyState>()(
     persist(
         (set) => ({
             studyItems: [],
+            pinnedItemIds: [],
 
             addStudyItem: (itemData) => {
                 const now = new Date().toISOString();
@@ -55,11 +59,26 @@ export const useStudyStore = create<StudyState>()(
 
             markStudyItemStatus: (id, status) => {
                 set((state) => ({
-                    studyItems: state.studyItems.map((item) => 
-                        item.id === id 
-                            ? { ...item, status, updatedAt: new Date().toISOString() } 
+                    studyItems: state.studyItems.map((item) =>
+                        item.id === id
+                            ? { ...item, status, updatedAt: new Date().toISOString() }
                             : item
                     ),
+                }));
+            },
+
+            pinItem: (id) => {
+                set((state) => {
+                    if (state.pinnedItemIds.includes(id)) return state;
+                    // Enforce max 2 — drop the oldest pin to make room
+                    const next = [...state.pinnedItemIds, id];
+                    return { pinnedItemIds: next.slice(-2) };
+                });
+            },
+
+            unpinItem: (id) => {
+                set((state) => ({
+                    pinnedItemIds: state.pinnedItemIds.filter(p => p !== id),
                 }));
             },
         }),
@@ -68,6 +87,7 @@ export const useStudyStore = create<StudyState>()(
             storage: supabaseService as any,
             partialize: (state) => ({
                 studyItems: state.studyItems,
+                pinnedItemIds: state.pinnedItemIds,
             }),
         }
     )
