@@ -14,6 +14,7 @@ import { DateFilter } from '@/components/tasks/DateFilter';
 import { Zap, Tags, Plus } from 'lucide-react';
 import { ManageTagsModal } from '@/components/tasks/ManageTagsModal';
 import { StudyListPage } from './StudyListPage';
+import { ReadingPage } from './ReadingPage';
 import { StudyListFormModal } from '@/components/study/StudyListFormModal';
 import { StudyItem } from '@/types/StudyItem';
 import { GoalsPage } from './GoalsPage';
@@ -49,8 +50,8 @@ export const Dashboard: React.FC = () => {
 
     const currentCategory = activeTab === 'random' ? 'random' : 'dynamic';
     const isCoreTab = activeTab === 'core-tasks';
-    const showDateFilter = !isCoreTab && activeTab !== 'study-list' && activeTab !== 'health' && activeTab !== 'goals';
-    const showCreateBtn = !isCoreTab && activeTab !== 'health';
+    const showDateFilter = !isCoreTab && activeTab !== 'study-list' && activeTab !== 'health' && activeTab !== 'goals' && activeTab !== 'reading';
+    const showCreateBtn = !isCoreTab && activeTab !== 'health' && activeTab !== 'reading';
 
     const createLabel =
         activeTab === 'study-list' ? 'New Item' :
@@ -144,13 +145,14 @@ export const Dashboard: React.FC = () => {
                         {activeTab === 'random' && <RandomTasksPage onEdit={handleEdit} />}
                         {activeTab === 'core-tasks' && <CoreTasksPage onEdit={handleEdit} />}
                         {activeTab === 'study-list' && <StudyListPage onEdit={handleStudyEdit} />}
+                        {activeTab === 'reading' && <ReadingPage />}
                         {activeTab === 'health' && <HealthPage />}
                     </motion.div>
                 </AnimatePresence>
             </main>
 
             {/* FABs */}
-            {!isCoreTab && activeTab !== 'study-list' && activeTab !== 'health' && (
+            {!isCoreTab && activeTab !== 'study-list' && activeTab !== 'health' && activeTab !== 'reading' && (
                 <FloatingActionButton onClick={handleCreate} category={currentCategory as 'dynamic' | 'random'} />
             )}
             {activeTab === 'study-list' && (

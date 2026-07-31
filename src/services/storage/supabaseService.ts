@@ -134,6 +134,45 @@ export const supabaseService: IStorageService = {
                 };
             }
 
+            if (name === 'todo-ai-reading-storage') {
+                const { data: books, error } = await supabase.from('books').select('*');
+                const { data: rSettings } = await supabase
+                    .from('settings')
+                    .select('reading_pages_per_session, reading_books_per_day, reading_daily_goal, reading_streak, reading_last_completed_date')
+                    .eq('id', SETTINGS_SINGLETON_ID)
+                    .maybeSingle();
+                if (error) {
+                    console.error('Error fetching books from Supabase:', error);
+                    return null;
+                }
+                return {
+                    state: {
+                        books: (books || []).map((b: any) => ({
+                            id: b.id,
+                            title: b.title,
+                            author: b.author || '',
+                            totalPages: b.total_pages,
+                            pdfUrl: b.pdf_url || '',
+                            coverUrl: b.cover_url || '',
+                            currentPage: b.current_page || 1,
+                            isActive: b.is_active !== false,
+                            notes: b.notes || '',
+                            tags: b.tags || [],
+                            createdAt: b.created_at,
+                            updatedAt: b.updated_at,
+                        })),
+                        settings: {
+                            pagesPerSession: rSettings?.reading_pages_per_session ?? 10,
+                            booksPerDay: rSettings?.reading_books_per_day ?? 2,
+                        },
+                        todayGoal: rSettings?.reading_daily_goal ?? null,
+                        streak: rSettings?.reading_streak ?? 0,
+                        lastCompletedDate: rSettings?.reading_last_completed_date ?? null,
+                    },
+                    version: 0,
+                };
+            }
+
             if (name === 'todo-ai-health-storage') {
                 const { data: logs, error: logsError } = await supabase.from('health_logs').select('*');
                 const { data: tags, error: tagsError } = await supabase.from('health_tags').select('*');
@@ -309,6 +348,37 @@ export const supabaseService: IStorageService = {
                 await supabase.from('settings').upsert({
                     id: SETTINGS_SINGLETON_ID,
                     pinned_study_ids: state.pinnedItemIds || []
+                }, { onConflict: 'id' });
+            }
+
+            if (name === 'todo-ai-reading-storage') {
+                if (state.books && state.books.length > 0) {
+                    const { error } = await supabase.from('books').upsert(
+                        state.books.map((b: any) => ({
+                            id: b.id,
+                            title: b.title,
+                            author: b.author || '',
+                            total_pages: b.totalPages,
+                            pdf_url: b.pdfUrl || '',
+                            cover_url: b.coverUrl || '',
+                            current_page: b.currentPage,
+                            is_active: b.isActive,
+                            notes: b.notes || '',
+                            tags: b.tags || [],
+                            created_at: b.createdAt,
+                            updated_at: b.updatedAt,
+                        })),
+                        { onConflict: 'id' }
+                    );
+                    if (error) console.error('Error saving books to Supabase:', error);
+                }
+                await supabase.from('settings').upsert({
+                    id: SETTINGS_SINGLETON_ID,
+                    reading_pages_per_session: state.settings?.pagesPerSession ?? 10,
+                    reading_books_per_day: state.settings?.booksPerDay ?? 2,
+                    reading_daily_goal: state.todayGoal ?? null,
+                    reading_streak: state.streak ?? 0,
+                    reading_last_completed_date: state.lastCompletedDate ?? null,
                 }, { onConflict: 'id' });
             }
 

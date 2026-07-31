@@ -1,7 +1,6 @@
 import React from 'react';
 import { StudyItem } from '@/types/StudyItem';
 import { Pin, TrendingUp, Video, FileText, Globe, Headphones, PinOff } from 'lucide-react';
-import { cn } from '@/components/ui/Button';
 
 const CONTENT_ICONS: Record<string, React.ReactNode> = {
     youtube: <Video className="w-4 h-4 text-red-500" />,

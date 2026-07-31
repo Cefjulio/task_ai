@@ -1,8 +1,8 @@
 import React from 'react';
 import { cn } from '@/components/ui/Button';
-import { Target, Zap, LayoutList, Shuffle, Dices, Heart } from 'lucide-react';
+import { Target, Zap, LayoutList, Shuffle, Dices, Heart, BookOpen } from 'lucide-react';
 
-export type TabType = 'goals' | 'dynamic' | 'core-tasks' | 'random' | 'study-list' | 'health';
+export type TabType = 'goals' | 'dynamic' | 'core-tasks' | 'random' | 'study-list' | 'health' | 'reading';
 
 interface TabsProps {
     activeTab: TabType;
@@ -49,6 +49,14 @@ const TABS: { id: TabType; label: string; shortLabel: string; icon: React.ReactN
         icon: <Dices className="w-4 h-4" />,
         color: 'text-indigo-500',
         activeColor: 'text-indigo-600 dark:text-indigo-400',
+    },
+    {
+        id: 'reading',
+        label: 'Reading',
+        shortLabel: 'Reading',
+        icon: <BookOpen className="w-4 h-4" />,
+        color: 'text-emerald-500',
+        activeColor: 'text-emerald-600 dark:text-emerald-400',
     },
     {
         id: 'health',
