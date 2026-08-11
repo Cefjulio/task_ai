@@ -173,6 +173,43 @@ export const supabaseService: IStorageService = {
                 };
             }
 
+            if (name === 'todo-ai-lms-storage') {
+                const { data: courses, error: coursesError } = await supabase.from('lms_courses').select('*');
+                const { data: lessons, error: lessonsError } = await supabase.from('lms_lessons').select('*');
+
+                if (coursesError || lessonsError) {
+                    console.error('Error fetching LMS data from Supabase:', { coursesError, lessonsError });
+                    return null;
+                }
+
+                return {
+                    state: {
+                        courses: (courses || []).map((c: any) => ({
+                            id: c.id,
+                            title: c.title,
+                            description: c.description || '',
+                            emoji: c.emoji || '',
+                            color: c.color || '',
+                            category: c.category || '',
+                            createdAt: c.created_at,
+                            updatedAt: c.updated_at,
+                        })),
+                        lessons: (lessons || []).map((l: any) => ({
+                            id: l.id,
+                            courseId: l.course_id,
+                            title: l.title,
+                            content: l.content || '',
+                            resourceUrl: l.resource_url || '',
+                            status: l.status || 'not_started',
+                            order: l.sort_order ?? 0,
+                            createdAt: l.created_at,
+                            updatedAt: l.updated_at,
+                        })),
+                    },
+                    version: 0,
+                };
+            }
+
             if (name === 'todo-ai-health-storage') {
                 const { data: logs, error: logsError } = await supabase.from('health_logs').select('*');
                 const { data: tags, error: tagsError } = await supabase.from('health_tags').select('*');
@@ -382,6 +419,43 @@ export const supabaseService: IStorageService = {
                 }, { onConflict: 'id' });
             }
 
+            if (name === 'todo-ai-lms-storage') {
+                if (state.courses && state.courses.length > 0) {
+                    const { error } = await supabase.from('lms_courses').upsert(
+                        state.courses.map((c: any) => ({
+                            id: c.id,
+                            title: c.title,
+                            description: c.description || '',
+                            emoji: c.emoji || '',
+                            color: c.color || '',
+                            category: c.category || '',
+                            created_at: c.createdAt,
+                            updated_at: c.updatedAt,
+                        })),
+                        { onConflict: 'id' }
+                    );
+                    if (error) console.error('Error saving LMS courses to Supabase:', error);
+                }
+
+                if (state.lessons && state.lessons.length > 0) {
+                    const { error } = await supabase.from('lms_lessons').upsert(
+                        state.lessons.map((l: any) => ({
+                            id: l.id,
+                            course_id: l.courseId,
+                            title: l.title,
+                            content: l.content || '',
+                            resource_url: l.resourceUrl || '',
+                            status: l.status,
+                            sort_order: l.order,
+                            created_at: l.createdAt,
+                            updated_at: l.updatedAt,
+                        })),
+                        { onConflict: 'id' }
+                    );
+                    if (error) console.error('Error saving LMS lessons to Supabase:', error);
+                }
+            }
+
             if (name === 'todo-ai-health-storage') {
                 if (state.healthLogs) {
                     const { error } = await supabase.from('health_logs').upsert(
@@ -444,6 +518,10 @@ export const supabaseService: IStorageService = {
         if (name === 'todo-ai-health-storage') {
             await supabase.from('health_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
             await supabase.from('health_tags').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+        if (name === 'todo-ai-lms-storage') {
+            await supabase.from('lms_lessons').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            await supabase.from('lms_courses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         }
     }
 };

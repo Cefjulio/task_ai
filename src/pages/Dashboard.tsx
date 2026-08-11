@@ -13,10 +13,8 @@ import { MotivationalBanner } from '@/components/dashboard/MotivationalBanner';
 import { DateFilter } from '@/components/tasks/DateFilter';
 import { Zap, Tags, Plus } from 'lucide-react';
 import { ManageTagsModal } from '@/components/tasks/ManageTagsModal';
-import { StudyListPage } from './StudyListPage';
+import { StudyHubPage } from './StudyHubPage';
 import { ReadingPage } from './ReadingPage';
-import { StudyListFormModal } from '@/components/study/StudyListFormModal';
-import { StudyItem } from '@/types/StudyItem';
 import { GoalsPage } from './GoalsPage';
 import { HealthPage } from './HealthPage';
 
@@ -25,18 +23,6 @@ export const Dashboard: React.FC = () => {
     const [isModalOpen, setModalOpen] = useState(false);
     const [isTagsModalOpen, setTagsModalOpen] = useState(false);
     const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
-    const [isStudyModalOpen, setStudyModalOpen] = useState(false);
-    const [studyItemToEdit, setStudyItemToEdit] = useState<StudyItem | null>(null);
-
-    const handleStudyEdit = (item: StudyItem) => {
-        setStudyItemToEdit(item);
-        setStudyModalOpen(true);
-    };
-
-    const handleStudyCreate = () => {
-        setStudyItemToEdit(null);
-        setStudyModalOpen(true);
-    };
 
     const handleEdit = (task: Task) => {
         setTaskToEdit(task);
@@ -51,24 +37,17 @@ export const Dashboard: React.FC = () => {
     const currentCategory = activeTab === 'random' ? 'random' : 'dynamic';
     const isCoreTab = activeTab === 'core-tasks';
     const showDateFilter = !isCoreTab && activeTab !== 'study-list' && activeTab !== 'health' && activeTab !== 'goals' && activeTab !== 'reading';
-    const showCreateBtn = !isCoreTab && activeTab !== 'health' && activeTab !== 'reading';
+    const showCreateBtn = !isCoreTab && activeTab !== 'health' && activeTab !== 'reading' && activeTab !== 'study-list';
 
     const createLabel =
-        activeTab === 'study-list' ? 'New Item' :
         activeTab === 'goals' ? 'New Goal' :
         activeTab === 'random' ? 'New Task' :
         'New Task';
 
     const createBgClass =
-        activeTab === 'study-list' ? 'bg-indigo-500 border-indigo-700 shadow-indigo-500/30' :
         activeTab === 'goals' ? 'bg-violet-500 border-violet-700 shadow-violet-500/30' :
         activeTab === 'random' ? 'bg-orange-500 border-orange-700 shadow-orange-500/30' :
         'bg-primary border-primary-dark shadow-primary/30';
-
-    const handleCreateClick = () => {
-        if (activeTab === 'study-list') handleStudyCreate();
-        else handleCreate();
-    };
 
     return (
         <div className="min-h-screen bg-background-light dark:bg-background-dark w-full overflow-x-hidden pb-28 relative transition-colors duration-300">
@@ -116,7 +95,7 @@ export const Dashboard: React.FC = () => {
                         {/* Desktop create button */}
                         {showCreateBtn && (
                             <button
-                                onClick={handleCreateClick}
+                                onClick={handleCreate}
                                 className={`hidden md:flex items-center gap-2 text-white text-xs font-extrabold uppercase tracking-wider px-4 py-2.5 rounded-2xl border-b-4 shadow-lg transition-all hover:brightness-105 active:border-b-2 active:translate-y-0.5 ${createBgClass}`}
                             >
                                 <Plus className="w-4 h-4" />
@@ -144,7 +123,7 @@ export const Dashboard: React.FC = () => {
                         {activeTab === 'dynamic' && <DynamicTasksPage onEdit={handleEdit} />}
                         {activeTab === 'random' && <RandomTasksPage onEdit={handleEdit} />}
                         {activeTab === 'core-tasks' && <CoreTasksPage onEdit={handleEdit} />}
-                        {activeTab === 'study-list' && <StudyListPage onEdit={handleStudyEdit} />}
+                        {activeTab === 'study-list' && <StudyHubPage />}
                         {activeTab === 'reading' && <ReadingPage />}
                         {activeTab === 'health' && <HealthPage />}
                     </motion.div>
@@ -155,9 +134,6 @@ export const Dashboard: React.FC = () => {
             {!isCoreTab && activeTab !== 'study-list' && activeTab !== 'health' && activeTab !== 'reading' && (
                 <FloatingActionButton onClick={handleCreate} category={currentCategory as 'dynamic' | 'random'} />
             )}
-            {activeTab === 'study-list' && (
-                <FloatingActionButton onClick={handleStudyCreate} category="dynamic" />
-            )}
 
             {/* Modals */}
             <TaskFormModal
@@ -165,11 +141,6 @@ export const Dashboard: React.FC = () => {
                 onClose={() => setModalOpen(false)}
                 taskToEdit={taskToEdit}
                 defaultCategory={currentCategory}
-            />
-            <StudyListFormModal
-                isOpen={isStudyModalOpen}
-                onClose={() => setStudyModalOpen(false)}
-                itemToEdit={studyItemToEdit}
             />
             <ManageTagsModal
                 isOpen={isTagsModalOpen}

@@ -44,8 +44,8 @@ const TABS: { id: TabType; label: string; shortLabel: string; icon: React.ReactN
     },
     {
         id: 'study-list',
-        label: 'Study Roulette',
-        shortLabel: 'Roulette',
+        label: 'Study Hub',
+        shortLabel: 'Study',
         icon: <Dices className="w-4 h-4" />,
         color: 'text-indigo-500',
         activeColor: 'text-indigo-600 dark:text-indigo-400',
