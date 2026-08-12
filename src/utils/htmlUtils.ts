@@ -5,9 +5,20 @@ export function stripHtml(html: string): string {
 
 /** Extract text content from each <li> element */
 export function parseListItems(html: string): string[] {
-    const matches = [...html.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)];
-    return matches
-        .map(m => stripHtml(m[1]))
+    const liMatches = [...html.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)];
+    if (liMatches.length > 0) {
+        return liMatches.map(m => stripHtml(m[1])).filter(t => t.length > 0);
+    }
+
+    // Quill only emits <li> when the user applies list formatting explicitly.
+    // If they just typed lines and pressed Enter, each line is a <p> (or a
+    // <br>-separated line within one block) instead — treat those as items too.
+    const withLineBreaks = html
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/p>\s*<p[^>]*>/gi, '\n');
+    return stripHtml(withLineBreaks)
+        .split('\n')
+        .map(t => t.trim())
         .filter(t => t.length > 0);
 }
 
