@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLmsStore } from '@/store/lmsStore';
-import { Course } from '@/types/Lms';
+import { Course, Lesson } from '@/types/Lms';
 import { LmsStatsHeader } from '@/components/lms/LmsStatsHeader';
 import { ContinueLearningBanner } from '@/components/lms/ContinueLearningBanner';
+import { LessonRoulette } from '@/components/lms/LessonRoulette';
 import { CourseCard } from '@/components/lms/CourseCard';
 import { CourseFormModal } from '@/components/lms/CourseFormModal';
 import { CourseDetailView } from '@/components/lms/CourseDetailView';
@@ -55,10 +56,14 @@ export const LmsPage: React.FC = () => {
         setFocusLessonId(null);
     };
 
+    const handleGoToLesson = (course: Course, lesson: Lesson) => {
+        setSelectedCourseId(course.id);
+        setFocusLessonId(lesson.id);
+    };
+
     const handleResume = () => {
         if (!continueLearning) return;
-        setSelectedCourseId(continueLearning.course.id);
-        setFocusLessonId(continueLearning.lesson.id);
+        handleGoToLesson(continueLearning.course, continueLearning.lesson);
     };
 
     const handleCreateCourse = () => {
@@ -105,6 +110,10 @@ export const LmsPage: React.FC = () => {
     return (
         <div className="space-y-5">
             <LmsStatsHeader courses={courses} lessons={lessons} />
+
+            {courses.length > 0 && (
+                <LessonRoulette courses={courses} lessons={lessons} onGoToLesson={handleGoToLesson} />
+            )}
 
             <AnimatePresence>
                 {continueLearning && (
