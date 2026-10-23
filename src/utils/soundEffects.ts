@@ -94,6 +94,45 @@ export function playLevelUp() {
     [1047, 1319, 1568].forEach((f, j) => tone(f, 0.55, 'sine', 0.18 - j * 0.04, end));
 }
 
+// Soft paper "swish" — a short band-passed noise burst that sweeps upward
+export function playPageTurn() {
+    const ctx = getCtx();
+    if (!ctx) return;
+    try {
+        if (ctx.state === 'suspended') ctx.resume();
+        const now = ctx.currentTime;
+        const dur = 0.32;
+
+        const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+            data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+        }
+
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.Q.value = 0.9;
+        filter.frequency.setValueAtTime(1400, now);
+        filter.frequency.exponentialRampToValueAtTime(5200, now + dur);
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.14, now + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        source.start(now);
+        source.stop(now + dur + 0.02);
+    } catch {
+        // silently ignore audio errors
+    }
+}
+
 export function playSoftClick() {
     tone(900, 0.05, 'sine', 0.07);
 }

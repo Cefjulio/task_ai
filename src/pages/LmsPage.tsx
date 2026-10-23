@@ -5,9 +5,10 @@ import { Course, Lesson } from '@/types/Lms';
 import { LmsStatsHeader } from '@/components/lms/LmsStatsHeader';
 import { ContinueLearningBanner } from '@/components/lms/ContinueLearningBanner';
 import { LessonRoulette } from '@/components/lms/LessonRoulette';
-import { CourseCard } from '@/components/lms/CourseCard';
+import { BookCover } from '@/components/lms/BookCover';
 import { CourseFormModal } from '@/components/lms/CourseFormModal';
-import { CourseDetailView } from '@/components/lms/CourseDetailView';
+import { BookReader } from '@/components/lms/BookReader';
+import { SHELF_PLANK_CLASS } from '@/components/lms/bookStyles';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { GraduationCap, Plus } from 'lucide-react';
 
@@ -86,7 +87,8 @@ export const LmsPage: React.FC = () => {
     if (selectedCourse) {
         return (
             <>
-                <CourseDetailView
+                <BookReader
+                    key={selectedCourse.id}
                     course={selectedCourse}
                     lessons={lessons.filter(l => l.courseId === selectedCourse.id)}
                     onBack={() => setSelectedCourseId(null)}
@@ -193,27 +195,34 @@ export const LmsPage: React.FC = () => {
                     )}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <AnimatePresence>
-                        {filteredCourses.map((course, index) => (
-                            <motion.div
-                                key={course.id}
-                                layout
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                transition={{ duration: 0.2, delay: index * 0.03 }}
-                            >
-                                <CourseCard
-                                    course={course}
-                                    lessons={lessons.filter(l => l.courseId === course.id)}
-                                    onOpen={handleOpenCourse}
-                                    onEdit={handleEditCourse}
-                                    onDelete={handleDeleteCourse}
-                                />
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
+                // Bookcase: each course is a book standing on the shelf
+                <div className="rounded-3xl border border-stone-200/80 dark:border-stone-800 bg-gradient-to-b from-amber-50/70 to-stone-100/80 dark:from-stone-900/70 dark:to-stone-950/70 shadow-inner px-1 sm:px-3 pt-2">
+                    <div className="flex flex-wrap">
+                        <AnimatePresence>
+                            {filteredCourses.map((course, index) => (
+                                <motion.div
+                                    key={course.id}
+                                    className="shrink-0 grow-0 basis-1/2 sm:basis-1/3 lg:basis-1/4 xl:basis-1/5"
+                                    initial={{ opacity: 0, y: 14 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 14 }}
+                                    transition={{ duration: 0.25, delay: index * 0.04 }}
+                                >
+                                    <BookCover
+                                        course={course}
+                                        lessons={lessons.filter(l => l.courseId === course.id)}
+                                        onOpen={handleOpenCourse}
+                                        onEdit={handleEditCourse}
+                                        onDelete={handleDeleteCourse}
+                                    />
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                        {/* Runs the plank to the end of the last row */}
+                        <div aria-hidden className="relative min-w-0 flex-1 self-stretch">
+                            <div className={SHELF_PLANK_CLASS} />
+                        </div>
+                    </div>
                 </div>
             )}
 
