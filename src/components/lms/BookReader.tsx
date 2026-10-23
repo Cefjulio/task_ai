@@ -193,7 +193,7 @@ const PageProgress: React.FC<PageProgressProps> = ({ page, total, completed, boo
 export const BookReader: React.FC<BookReaderProps> = ({
     course, lessons, onBack, onEditCourse, onDeleteCourse, focusLessonId,
 }) => {
-    const { deleteLesson, reorderLesson, setLessonStatus, setBookmark } = useLmsStore();
+    const { deleteLesson, reorderLesson, setLessonStatus, setAllLessonsStatus, setBookmark } = useLmsStore();
     const { soundEnabled, toggleSound } = useSettingsStore();
     const bookmarkId = course.bookmarkLessonId ?? undefined;
     const lastReadId = useLmsReaderStore(s => s.lastRead[course.id]);
@@ -336,6 +336,15 @@ export const BookReader: React.FC<BookReaderProps> = ({
         }
     };
 
+    const celebrateFinish = () => {
+        triggerConfetti();
+        if (soundEnabled) {
+            resumeAudio();
+            playLevelUp();
+        }
+        toast.success('You finished the book! 🎉');
+    };
+
     /** Returns true when this change finished the whole book. */
     const changeStatus = (lesson: Lesson, status: LessonStatus): boolean => {
         const finishesBook =
@@ -344,16 +353,26 @@ export const BookReader: React.FC<BookReaderProps> = ({
             sorted.every(l => l.id === lesson.id || l.status === 'completed');
 
         setLessonStatus(lesson.id, status);
-
-        if (finishesBook) {
-            triggerConfetti();
-            if (soundEnabled) {
-                resumeAudio();
-                playLevelUp();
-            }
-            toast.success('You finished the book! 🎉');
-        }
+        if (finishesBook) celebrateFinish();
         return finishesBook;
+    };
+
+    /** Contents page tick: complete ↔ incomplete. */
+    const toggleComplete = (lesson: Lesson) =>
+        changeStatus(lesson, lesson.status === 'completed' ? 'not_started' : 'completed');
+
+    /** Contents page header button: the whole book at once (asks first — it touches every page). */
+    const setAllStatus = (status: LessonStatus) => {
+        if (total === 0) return;
+        const message = status === 'completed'
+            ? `Mark all ${total} pages as complete?`
+            : `Mark all ${total} pages as incomplete? This resets your progress in this book.`;
+        if (!window.confirm(message)) return;
+
+        const finishesBook = status === 'completed' && completed < total;
+        setAllLessonsStatus(course.id, status);
+        if (finishesBook) celebrateFinish();
+        else toast.success(status === 'completed' ? 'All pages marked complete' : 'All pages marked incomplete');
     };
 
     const completeAndTurn = (lesson: Lesson) => {
@@ -612,6 +631,8 @@ export const BookReader: React.FC<BookReaderProps> = ({
                                 bookmarkId={bookmarkId}
                                 accent={accent}
                                 onSelect={(id) => turnTo(id)}
+                                onToggleComplete={toggleComplete}
+                                onSetAllStatus={setAllStatus}
                                 className="rounded-xl lg:rounded-r-sm"
                             />
                         </div>
@@ -699,6 +720,8 @@ export const BookReader: React.FC<BookReaderProps> = ({
                                 bookmarkId={bookmarkId}
                                 accent={accent}
                                 onSelect={(id) => { setContentsOpen(false); turnTo(id); }}
+                                onToggleComplete={toggleComplete}
+                                onSetAllStatus={setAllStatus}
                                 className="rounded-t-3xl"
                             />
                             <button
