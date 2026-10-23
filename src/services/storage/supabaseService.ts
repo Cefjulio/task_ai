@@ -191,6 +191,7 @@ export const supabaseService: IStorageService = {
                             emoji: c.emoji || '',
                             color: c.color || '',
                             category: c.category || '',
+                            bookmarkLessonId: c.bookmark_lesson_id ?? null,
                             createdAt: c.created_at,
                             updatedAt: c.updated_at,
                         })),
@@ -421,19 +422,28 @@ export const supabaseService: IStorageService = {
 
             if (name === 'todo-ai-lms-storage') {
                 if (state.courses && state.courses.length > 0) {
-                    const { error } = await supabase.from('lms_courses').upsert(
-                        state.courses.map((c: any) => ({
-                            id: c.id,
-                            title: c.title,
-                            description: c.description || '',
-                            emoji: c.emoji || '',
-                            color: c.color || '',
-                            category: c.category || '',
-                            created_at: c.createdAt,
-                            updated_at: c.updatedAt,
-                        })),
-                        { onConflict: 'id' }
-                    );
+                    const courseRows = state.courses.map((c: any) => ({
+                        id: c.id,
+                        title: c.title,
+                        description: c.description || '',
+                        emoji: c.emoji || '',
+                        color: c.color || '',
+                        category: c.category || '',
+                        bookmark_lesson_id: c.bookmarkLessonId ?? null,
+                        created_at: c.createdAt,
+                        updated_at: c.updatedAt,
+                    }));
+                    let { error } = await supabase.from('lms_courses').upsert(courseRows, { onConflict: 'id' });
+
+                    // The bookmark column comes from supabase_lms_bookmark.sql — until that has been run,
+                    // keep saving everything else instead of failing the whole upsert.
+                    if (error && /bookmark_lesson_id/.test(error.message ?? '')) {
+                        console.warn('lms_courses.bookmark_lesson_id is missing — run supabase_lms_bookmark.sql to sync bookmarks.');
+                        ({ error } = await supabase.from('lms_courses').upsert(
+                            courseRows.map(({ bookmark_lesson_id, ...row }: any) => row),
+                            { onConflict: 'id' }
+                        ));
+                    }
                     if (error) console.error('Error saving LMS courses to Supabase:', error);
                 }
 

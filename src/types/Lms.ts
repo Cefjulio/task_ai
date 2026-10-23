@@ -7,6 +7,7 @@ export interface Course {
     emoji: string;
     color: string; // hex accent
     category: string; // free-text label used for filter chips
+    bookmarkLessonId?: string | null; // lesson (page) the reader bookmarked in this book
     createdAt: string; // ISO String
     updatedAt: string; // ISO String
 }

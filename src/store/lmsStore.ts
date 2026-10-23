@@ -18,6 +18,9 @@ interface LmsState {
     deleteLesson: (id: string) => void;
     reorderLesson: (id: string, direction: 'up' | 'down') => void;
     setLessonStatus: (id: string, status: LessonStatus) => void;
+
+    /** Bookmark a lesson in its book (null clears it). Leaves updatedAt alone so the shelf order doesn't shuffle. */
+    setBookmark: (courseId: string, lessonId: string | null) => void;
 }
 
 export const useLmsStore = create<LmsState>()(
@@ -85,7 +88,10 @@ export const useLmsStore = create<LmsState>()(
             },
 
             deleteLesson: async (id) => {
-                set((state) => ({ lessons: state.lessons.filter((l) => l.id !== id) }));
+                set((state) => ({
+                    lessons: state.lessons.filter((l) => l.id !== id),
+                    courses: state.courses.map((c) => (c.bookmarkLessonId === id ? { ...c, bookmarkLessonId: null } : c)),
+                }));
                 const { error } = await supabase.from('lms_lessons').delete().eq('id', id);
                 if (error) console.error('Error deleting lesson from Supabase:', error);
             },
@@ -114,6 +120,12 @@ export const useLmsStore = create<LmsState>()(
                         }),
                     };
                 });
+            },
+
+            setBookmark: (courseId, lessonId) => {
+                set((state) => ({
+                    courses: state.courses.map((c) => (c.id === courseId ? { ...c, bookmarkLessonId: lessonId } : c)),
+                }));
             },
 
             setLessonStatus: (id, status) => {

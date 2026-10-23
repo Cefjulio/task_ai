@@ -6,6 +6,7 @@ CREATE TABLE public.lms_courses (
     emoji TEXT,
     color TEXT,
     category TEXT,
+    bookmark_lesson_id UUID, -- lesson bookmarked in this book (see supabase_lms_bookmark.sql)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
