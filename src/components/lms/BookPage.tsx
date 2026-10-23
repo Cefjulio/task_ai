@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Lesson, LessonStatus } from '@/types/Lms';
 import { QuillContent } from '@/components/ui/QuillContent';
 import { cn } from '@/components/ui/Button';
-import { shadeHex } from '@/utils/colorUtils';
+import { hueOf, shadeHex } from '@/utils/colorUtils';
 import { PAPER_CLASS, RIBBON_CLIP, STATUS_META, STATUS_ORDER } from './bookStyles';
 import { ExternalLink, Eye, EyeOff, Pencil, Trash2, ChevronsLeft, ChevronsRight, ArrowRight, CheckCheck, Bookmark } from 'lucide-react';
 
@@ -34,6 +34,10 @@ export const BookPage: React.FC<BookPageProps> = ({
     const isFirst = page === 1;
     const isLast = page === total;
     const hasNotes = lesson.content.replace(/<[^>]*>/g, '').trim().length > 0;
+
+    // "Complete & turn" uses the book's colour, but never a green: green is reserved for "already completed"
+    const hue = hueOf(accent);
+    const pendingColor = hue !== null && hue >= 90 && hue <= 170 ? '#6366f1' : accent;
 
     return (
         <div className={cn('relative flex h-full flex-col overflow-hidden rounded-xl shadow-md lg:rounded-l-sm', PAPER_CLASS)}>
@@ -202,16 +206,20 @@ export const BookPage: React.FC<BookPageProps> = ({
                     <button
                         onClick={onCompleteAndNext}
                         className="flex items-center gap-1.5 rounded-xl border-b-4 px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-white transition-all active:translate-y-0.5 active:border-b-2"
-                        style={{ backgroundColor: accent, borderColor: shadeHex(accent, -28) }}
+                        style={{ backgroundColor: pendingColor, borderColor: shadeHex(pendingColor, -28) }}
                     >
                         <CheckCheck className="h-4 w-4" />
                         {isLast ? 'Mark complete' : 'Complete & turn'}
                     </button>
                 ) : !isLast ? (
+                    // Green = this page is already done; the book's colour = still to complete
                     <button
                         onClick={onTurnNext}
                         className="flex items-center gap-1.5 rounded-xl border-b-4 px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-white transition-all active:translate-y-0.5 active:border-b-2"
-                        style={{ backgroundColor: accent, borderColor: shadeHex(accent, -28) }}
+                        style={{
+                            backgroundColor: STATUS_META.completed.color,
+                            borderColor: shadeHex(STATUS_META.completed.color, -28),
+                        }}
                     >
                         Turn the page
                         <ArrowRight className="h-4 w-4" />

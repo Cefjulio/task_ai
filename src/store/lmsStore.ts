@@ -18,6 +18,8 @@ interface LmsState {
     deleteLesson: (id: string) => void;
     reorderLesson: (id: string, direction: 'up' | 'down') => void;
     setLessonStatus: (id: string, status: LessonStatus) => void;
+    /** Set every lesson in a book to the same status in one update. */
+    setAllLessonsStatus: (courseId: string, status: LessonStatus) => void;
 
     /** Bookmark a lesson in its book (null clears it). Leaves updatedAt alone so the shelf order doesn't shuffle. */
     setBookmark: (courseId: string, lessonId: string | null) => void;
@@ -125,6 +127,15 @@ export const useLmsStore = create<LmsState>()(
             setBookmark: (courseId, lessonId) => {
                 set((state) => ({
                     courses: state.courses.map((c) => (c.id === courseId ? { ...c, bookmarkLessonId: lessonId } : c)),
+                }));
+            },
+
+            setAllLessonsStatus: (courseId, status) => {
+                const now = new Date().toISOString();
+                set((state) => ({
+                    lessons: state.lessons.map((l) =>
+                        l.courseId === courseId && l.status !== status ? { ...l, status, updatedAt: now } : l
+                    ),
                 }));
             },
 
