@@ -49,6 +49,7 @@ export const supabaseService: IStorageService = {
                             completions: t.completions,
                             createdAt: t.created_at,
                             lastQueuedAt: t.last_queued_at,
+                            focusDate: t.focus_date ?? undefined,
                             history: t.history || [],
                             tags: t.tags || [],
                             goalId: t.goal_id
@@ -272,28 +273,37 @@ export const supabaseService: IStorageService = {
 
                 // 2. Upsert the current tasks
                 if (state.tasks && state.tasks.length > 0) {
-                    const { error } = await supabase.from('tasks').upsert(
-                        state.tasks.map((t: any) => ({
-                            id: t.id,
-                            title: t.title,
-                            description: t.description,
-                            priority: t.priority,
-                            status: t.status,
-                            sub_steps: t.subSteps,
-                            category: t.category,
-                            frequency: t.frequency,
-                            frequency_interval: t.frequencyInterval,
-                            week_days: t.weekDays,
-                            week_interval: t.weekInterval,
-                            completions: t.completions,
-                            created_at: t.createdAt,
-                            last_queued_at: t.lastQueuedAt,
-                            history: t.history || [],
-                            tags: t.tags || [],
-                            goal_id: t.goalId
-                        })),
-                        { onConflict: 'id' }
-                    );
+                    const taskRows = state.tasks.map((t: any) => ({
+                        id: t.id,
+                        title: t.title,
+                        description: t.description,
+                        priority: t.priority,
+                        status: t.status,
+                        sub_steps: t.subSteps,
+                        category: t.category,
+                        frequency: t.frequency,
+                        frequency_interval: t.frequencyInterval,
+                        week_days: t.weekDays,
+                        week_interval: t.weekInterval,
+                        completions: t.completions,
+                        created_at: t.createdAt,
+                        last_queued_at: t.lastQueuedAt,
+                        focus_date: t.focusDate ?? null,
+                        history: t.history || [],
+                        tags: t.tags || [],
+                        goal_id: t.goalId
+                    }));
+                    let { error } = await supabase.from('tasks').upsert(taskRows, { onConflict: 'id' });
+
+                    // The Focus column comes from supabase_task_focus.sql — until that has been run,
+                    // keep saving everything else instead of failing the whole upsert.
+                    if (error && /focus_date/.test(error.message ?? '')) {
+                        console.warn('tasks.focus_date is missing — run supabase_task_focus.sql to sync Focus picks.');
+                        ({ error } = await supabase.from('tasks').upsert(
+                            taskRows.map(({ focus_date, ...row }: any) => row),
+                            { onConflict: 'id' }
+                        ));
+                    }
                     if (error) console.error('Error saving tasks to Supabase:', error);
                 }
 
