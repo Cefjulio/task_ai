@@ -1,15 +1,27 @@
 import React from 'react';
 import { SubStep } from '@/types/Task';
 import { cn } from '@/components/ui/Button';
-import { Check } from 'lucide-react';
+import { Check, Star } from 'lucide-react';
 
 interface SubStepItemProps {
     step: SubStep;
     onToggle: () => void;
+    /** Optional ☆ to put just this step in today's Focus lane. */
+    focus?: {
+        active: boolean;
+        /** Lane is full and this step isn't in it. */
+        disabled: boolean;
+        onToggle: () => void;
+    };
 }
 
-export const SubStepItem: React.FC<SubStepItemProps> = ({ step, onToggle }) => {
+export const SubStepItem: React.FC<SubStepItemProps> = ({ step, onToggle, focus }) => {
     const isDone = step.status === 'done';
+    const starLabel = focus?.active
+        ? "Remove this step from today's Focus"
+        : focus?.disabled
+            ? 'Focus is full (3) — remove one first'
+            : "Add this step to today's Focus";
 
     return (
         <div
@@ -17,7 +29,11 @@ export const SubStepItem: React.FC<SubStepItemProps> = ({ step, onToggle }) => {
             onClick={onToggle}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggle(); }}
+            onKeyDown={(e) => {
+                // Keys pressed on the ☆ inside belong to the ☆, not to the step
+                if (e.target !== e.currentTarget) return;
+                if (e.key === 'Enter' || e.key === ' ') onToggle();
+            }}
         >
             <div className={cn(
                 "flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-colors",
@@ -28,13 +44,31 @@ export const SubStepItem: React.FC<SubStepItemProps> = ({ step, onToggle }) => {
                 <Check className="w-3 h-3" strokeWidth={3} />
             </div>
             <span className={cn(
-                "text-sm transition-all",
+                "min-w-0 flex-1 break-words text-sm transition-all",
                 isDone
                     ? "text-slate-400 dark:text-slate-500 line-through"
                     : "text-slate-700 dark:text-slate-200"
             )}>
                 {step.text}
             </span>
+            {focus && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); focus.onToggle(); }}
+                    aria-pressed={focus.active}
+                    aria-label={starLabel}
+                    title={starLabel}
+                    className={cn(
+                        'shrink-0 rounded-lg p-1 transition-colors',
+                        focus.active
+                            ? 'text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                            : focus.disabled
+                                ? 'cursor-not-allowed text-slate-200 dark:text-slate-700'
+                                : 'text-slate-300 hover:bg-slate-100 hover:text-amber-500 dark:text-slate-600 dark:hover:bg-slate-800'
+                    )}
+                >
+                    <Star className={cn('h-4 w-4', focus.active && 'fill-current')} />
+                </button>
+            )}
         </div>
     );
 };
