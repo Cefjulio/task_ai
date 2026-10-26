@@ -2,6 +2,7 @@ export interface SubStep {
     id: string;
     text: string;
     status: 'pending' | 'done';
+    focusDate?: string; // YYYY-MM-DD this single step is in that day's Focus lane (lives inside the task's sub_steps JSON)
 }
 
 export type TaskPriority = 'primary' | 'secondary' | 'tertiary' | 'high' | 'middle' | 'low';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Task } from '@/types/Task';
+import { SubStep, Task } from '@/types/Task';
 import { getTaskProgress, getTaskStatusForDate, getTaskStepStats } from '@/utils/taskHelpers';
 import { stripHtml } from '@/utils/htmlUtils';
 import { useTasks } from '@/hooks/useTasks';
@@ -18,11 +18,13 @@ interface TaskRowProps {
     /** False when today's Focus lane is full (and this task isn't in it). */
     canAddFocus: boolean;
     onToggleFocus: () => void;
+    /** ☆ on a single sub-step of this task. */
+    onToggleStepFocus: (step: SubStep) => void;
     defaultExpanded?: boolean;
 }
 
 /** One-line task: tick it off, see its step progress, or expand it to work through the sub-steps. */
-export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, canAddFocus, onToggleFocus, defaultExpanded = false }) => {
+export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, canAddFocus, onToggleFocus, onToggleStepFocus, defaultExpanded = false }) => {
     const { toggleSubStep, deleteTask } = useTasks();
     const { selectedDate, tags: allTags } = useTaskStore();
     const { complete, skip, reopen } = useTaskStatusActions(task);
@@ -35,6 +37,8 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, canAddF
     const progress = getTaskProgress(task);
     const taskTags = (task.tags || []).map(id => allTags.find(t => t.id === id)).filter(Boolean);
     const description = task.description ? stripHtml(task.description) : '';
+    // Single steps of this task that are in today's Focus lane (not shown when the whole task is)
+    const focusedStepCount = isFocus ? 0 : task.subSteps.filter(s => s.focusDate === selectedDate).length;
 
     const starLabel = isFocus
         ? "Remove from today's Focus"
@@ -91,6 +95,16 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, canAddF
                         </span>
                     )}
 
+                    {focusedStepCount > 0 && (
+                        <span
+                            className="flex shrink-0 items-center gap-0.5 text-xs font-bold text-amber-500"
+                            title={`${focusedStepCount} ${focusedStepCount === 1 ? 'step' : 'steps'} in today's Focus`}
+                        >
+                            <Star className="h-3.5 w-3.5 fill-current" />
+                            {focusedStepCount}
+                        </span>
+                    )}
+
                     {stats.total > 0 && (
                         <span className="flex shrink-0 items-center gap-2" title={`${stats.completed} of ${stats.total} steps done`}>
                             <span className="hidden h-1.5 w-12 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 sm:block">
@@ -144,9 +158,23 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, canAddF
                     )}
                     {task.subSteps.length > 0 && (
                         <div className="space-y-0.5 rounded-2xl border border-slate-200/50 bg-slate-50 px-4 py-2 dark:border-slate-700/50 dark:bg-slate-800/50">
-                            {task.subSteps.map(step => (
-                                <SubStepItem key={step.id} step={step} onToggle={() => toggleSubStep(task.id, step.id)} />
-                            ))}
+                            {task.subSteps.map(step => {
+                                const stepInFocus = step.focusDate === selectedDate;
+                                // No ☆ when the whole task is already in Focus, or for a finished step that isn't
+                                const showStar = !isFocus && (step.status !== 'done' || stepInFocus);
+                                return (
+                                    <SubStepItem
+                                        key={step.id}
+                                        step={step}
+                                        onToggle={() => toggleSubStep(task.id, step.id)}
+                                        focus={showStar ? {
+                                            active: stepInFocus,
+                                            disabled: !canAddFocus && !stepInFocus,
+                                            onToggle: () => onToggleStepFocus(step),
+                                        } : undefined}
+                                    />
+                                );
+                            })}
                         </div>
                     )}
                     <TaskActions
