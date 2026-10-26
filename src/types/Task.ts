@@ -32,4 +32,5 @@ export interface Task {
     history?: { date: string; status: TaskStatus }[]; // ISO strings of dates (YYYY-MM-DD)
     tags?: string[]; // Array of Tag IDs
     goalId?: string; // Optional reference to a Goal ID
+    focusDate?: string; // YYYY-MM-DD this task is in that day's Focus lane (resets itself daily)
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTasks } from '@/hooks/useTasks';
-import { TaskCard } from '@/components/tasks/TaskCard';
+import { DailyCoreList } from '@/components/tasks/DailyCoreList';
 import { TaskQueue } from '@/components/tasks/TaskQueue';
 import { QueuedTasksBacklog } from '@/components/tasks/QueuedTasksBacklog';
 import { Task } from '@/types/Task';
@@ -10,7 +10,9 @@ import { isTaskDueOn } from '@/features/tasks/frequencyEngine';
 import { getTaskStatusForDate } from '@/utils/taskHelpers';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { TagFilter } from '@/components/tasks/TagFilter';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useDynamicViewStore } from '@/store/dynamicViewStore';
+import { cn } from '@/components/ui/Button';
+import { ChevronDown, ChevronUp, Target } from 'lucide-react';
 
 const EXPANDED_HEIGHT = 'h-[72vh] lg:h-[calc(100vh-230px)]';
 
@@ -31,8 +33,14 @@ export const DynamicTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEd
     });
 
     const dailyCoreTasks = dynamicTasksForDate.filter(t => t.priority === 'primary');
-    const pendingPrimary = dailyCoreTasks.filter(t => getTaskStatusForDate(t, selectedDate) === 'pending');
     const donePrimary = dailyCoreTasks.filter(t => getTaskStatusForDate(t, selectedDate) === 'done');
+
+    // Same set without the search / tag filters — the Focus lane ignores them
+    const allDueCore = tasks.filter(t =>
+        t.priority === 'primary' && (t.category || 'dynamic') === 'dynamic' && isTaskDueOn(t, selectedDate)
+    );
+    const focusMode = useDynamicViewStore(s => s.focusMode);
+    const toggleFocusMode = useDynamicViewStore(s => s.toggleFocusMode);
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -50,13 +58,29 @@ export const DynamicTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEd
                                 {donePrimary.length}/{dailyCoreTasks.length}
                             </span>
                         </div>
-                        <button
-                            onClick={() => setIsCoreOpen(o => !o)}
-                            className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-colors shrink-0"
-                            aria-label={isCoreOpen ? 'Collapse Daily Core' : 'Expand Daily Core'}
-                        >
-                            {isCoreOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                        </button>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                                onClick={toggleFocusMode}
+                                aria-pressed={focusMode}
+                                title="Focus mode: hide everything else until today's Focus tasks are done"
+                                className={cn(
+                                    'flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-extrabold uppercase tracking-wider transition-colors',
+                                    focusMode
+                                        ? 'bg-primary text-white shadow-sm'
+                                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
+                                )}
+                            >
+                                <Target className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Focus mode</span>
+                            </button>
+                            <button
+                                onClick={() => setIsCoreOpen(o => !o)}
+                                className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-colors"
+                                aria-label={isCoreOpen ? 'Collapse Daily Core' : 'Expand Daily Core'}
+                            >
+                                {isCoreOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                            </button>
+                        </div>
                     </div>
 
                     {isCoreOpen && (
@@ -71,36 +95,13 @@ export const DynamicTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEd
 
                 {isCoreOpen && (
                     <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
-                        {dailyCoreTasks.length === 0 ? (
-                            <div className="text-center py-12 px-6 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl h-full flex flex-col justify-center">
-                                <p className="text-slate-500 dark:text-slate-400 font-medium">
-                                    {searchQuery ? 'No tasks match your search.' : 'No core tasks scheduled for this day.'}
-                                </p>
-                            </div>
-                        ) : (
-                            <motion.div layout className="flex flex-col w-full gap-4">
-                                {pendingPrimary.map(t => (
-                                    <motion.div key={t.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                        <TaskCard task={t} onEdit={onEdit} />
-                                    </motion.div>
-                                ))}
-                                {donePrimary.length > 0 && (
-                                    <div className="relative py-4">
-                                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                                            <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
-                                        </div>
-                                        <div className="relative flex justify-center">
-                                            <span className="bg-white dark:bg-slate-900 px-3 text-xs font-bold text-slate-400 uppercase tracking-widest">Completed</span>
-                                        </div>
-                                    </div>
-                                )}
-                                {donePrimary.map(t => (
-                                    <motion.div key={t.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                        <TaskCard task={t} onEdit={onEdit} />
-                                    </motion.div>
-                                ))}
-                            </motion.div>
-                        )}
+                        <DailyCoreList
+                            tasks={dailyCoreTasks}
+                            allDue={allDueCore}
+                            date={selectedDate}
+                            onEdit={onEdit}
+                            emptyMessage={searchQuery ? 'No tasks match your search.' : 'No core tasks scheduled for this day.'}
+                        />
                     </div>
                 )}
             </motion.section>

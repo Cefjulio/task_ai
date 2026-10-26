@@ -33,7 +33,9 @@ export const useSupabaseRealtime = () => {
                             createdAt: newRecord.created_at,
                             lastQueuedAt: newRecord.last_queued_at,
                             history: newRecord.history || [],
-                            tags: newRecord.tags || []
+                            tags: newRecord.tags || [],
+                            // Only when the column exists, so a missing column can't wipe a local Focus pick
+                            ...('focus_date' in newRecord ? { focusDate: newRecord.focus_date ?? undefined } : {}),
                         };
 
                         // Check if task already exists in local state to avoid redundant updates

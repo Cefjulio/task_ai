@@ -7,8 +7,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { TaskActions } from './TaskActions';
 import { useTasks } from '@/hooks/useTasks';
 import { useTaskStore } from '@/store/taskStore';
-import { triggerConfetti, playApplause } from '@/utils/soundEffects';
-import toast from 'react-hot-toast';
+import { useTaskStatusActions } from '@/hooks/useTaskStatusActions';
 import { TaskDetailsModal } from './TaskDetailsModal';
 import { GoalBadge } from './GoalBadge';
 import { stripHtml } from '@/utils/htmlUtils';
@@ -19,7 +18,7 @@ interface TaskCardProps {
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit }) => {
-    const { markTaskStatus, deleteTask } = useTasks();
+    const { deleteTask } = useTasks();
     const { selectedDate, tags: allTags } = useTaskStore();
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
@@ -30,28 +29,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit }) => {
     const currentStatus = getTaskStatusForDate(task, selectedDate);
     const isCompleted = currentStatus === 'done';
 
-    const handleDone = () => {
-        markTaskStatus(task.id, 'done');
-        triggerConfetti();
-        playApplause();
-        toast.success('Task Completed! 🎉', { id: task.id });
-    };
-
-    const handleSkip = () => {
-        markTaskStatus(task.id, 'skipped');
-        toast('Task Skipped.', {
-            icon: '🙈',
-            id: task.id,
-            duration: 5000,
-            action: {
-                label: 'Undo',
-                onClick: () => {
-                    markTaskStatus(task.id, 'pending');
-                    toast.dismiss(task.id);
-                }
-            }
-        } as any);
-    };
+    const { complete: handleDone, skip: handleSkip } = useTaskStatusActions(task);
 
     return (
         <>
