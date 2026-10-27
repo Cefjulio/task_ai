@@ -15,8 +15,6 @@ interface TaskRowProps {
     task: Task;
     onEdit: (task: Task) => void;
     isFocus: boolean;
-    /** False when today's Focus lane is full (and this task isn't in it). */
-    canAddFocus: boolean;
     onToggleFocus: () => void;
     /** ☆ on a single sub-step of this task. */
     onToggleStepFocus: (step: SubStep) => void;
@@ -24,7 +22,7 @@ interface TaskRowProps {
 }
 
 /** One-line task: tick it off, see its step progress, or expand it to work through the sub-steps. */
-export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, canAddFocus, onToggleFocus, onToggleStepFocus, defaultExpanded = false }) => {
+export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, onToggleFocus, onToggleStepFocus, defaultExpanded = false }) => {
     const { toggleSubStep, deleteTask } = useTasks();
     const { selectedDate, tags: allTags } = useTaskStore();
     const { complete, skip, reopen } = useTaskStatusActions(task);
@@ -37,14 +35,12 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, canAddF
     const progress = getTaskProgress(task);
     const taskTags = (task.tags || []).map(id => allTags.find(t => t.id === id)).filter(Boolean);
     const description = task.description ? stripHtml(task.description) : '';
-    // Single steps of this task that are in today's Focus lane (not shown when the whole task is)
-    const focusedStepCount = isFocus ? 0 : task.subSteps.filter(s => s.focusDate === selectedDate).length;
+    // Still-pending steps of this task sitting in today's Focus lane (not shown when the whole task is)
+    const focusedStepCount = isFocus
+        ? 0
+        : task.subSteps.filter(s => s.focusDate === selectedDate && s.status !== 'done').length;
 
-    const starLabel = isFocus
-        ? "Remove from today's Focus"
-        : canAddFocus
-            ? "Add to today's Focus"
-            : 'Focus is full (3) — remove one first';
+    const starLabel = isFocus ? "Remove from today's Focus" : "Add to today's Focus";
 
     return (
         <div
@@ -129,9 +125,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, canAddF
                         'shrink-0 rounded-lg p-1.5 transition-colors',
                         isFocus
                             ? 'text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'
-                            : canAddFocus
-                                ? 'text-slate-300 hover:bg-slate-100 hover:text-amber-500 dark:text-slate-600 dark:hover:bg-slate-800'
-                                : 'cursor-not-allowed text-slate-200 dark:text-slate-700'
+                            : 'text-slate-300 hover:bg-slate-100 hover:text-amber-500 dark:text-slate-600 dark:hover:bg-slate-800'
                     )}
                 >
                     <Star className={cn('h-4.5 w-4.5', isFocus && 'fill-current')} />
@@ -169,7 +163,6 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, canAddF
                                         onToggle={() => toggleSubStep(task.id, step.id)}
                                         focus={showStar ? {
                                             active: stepInFocus,
-                                            disabled: !canAddFocus && !stepInFocus,
                                             onToggle: () => onToggleStepFocus(step),
                                         } : undefined}
                                     />

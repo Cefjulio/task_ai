@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import toast from 'react-hot-toast';
 import { SubStep, Task } from '@/types/Task';
 import { useTasks } from '@/hooks/useTasks';
 import { useDynamicViewStore } from '@/store/dynamicViewStore';
@@ -8,9 +7,6 @@ import { cn } from '@/components/ui/Button';
 import { TaskRow } from './TaskRow';
 import { FocusStepRow } from './FocusStepRow';
 import { ChevronDown, EyeOff, Target } from 'lucide-react';
-
-/** Slots in the Focus lane — whole tasks and single sub-steps share them. */
-export const MAX_FOCUS = 3;
 
 interface DailyCoreListProps {
     /** The day's core tasks after the search / tag filters. */
@@ -22,7 +18,10 @@ interface DailyCoreListProps {
     emptyMessage: string;
 }
 
-/** Daily Core as: a Focus lane (max 3 tasks/steps) → the remaining tasks as compact rows → a collapsed Done list. */
+/**
+ * Daily Core as: a Focus lane (any number of tasks / single steps, only the still-pending ones are listed)
+ * → the remaining tasks as compact rows → a collapsed Done list.
+ */
 export const DailyCoreList: React.FC<DailyCoreListProps> = ({ tasks, allDue, date, onEdit, emptyMessage }) => {
     const { updateTask, toggleSubStep } = useTasks();
     const focusMode = useDynamicViewStore(s => s.focusMode);
@@ -31,30 +30,32 @@ export const DailyCoreList: React.FC<DailyCoreListProps> = ({ tasks, allDue, dat
 
     const statusOf = (t: Task) => getTaskStatusForDate(t, date);
 
-    // Whole tasks in Focus…
+    // Everything picked for today's Focus — whole tasks…
     const focusTasks = allDue.filter(t => t.focusDate === date);
     const focusIds = new Set(focusTasks.map(t => t.id));
-    // …and single sub-steps in Focus (a task that is itself in Focus already covers its steps)
+    // …and single sub-steps (a task that is itself in Focus already covers its steps)
     const focusSteps = allDue.flatMap(t =>
         focusIds.has(t.id) ? [] : t.subSteps.filter(s => s.focusDate === date).map(step => ({ task: t, step }))
     );
 
-    const focusCount = focusTasks.length + focusSteps.length;
-    const focusDone =
-        focusTasks.filter(t => statusOf(t) === 'done').length + focusSteps.filter(f => f.step.status === 'done').length;
-    const focusResolved =
-        focusCount > 0 &&
-        focusTasks.every(t => statusOf(t) !== 'pending') &&
-        focusSteps.every(f => f.step.status === 'done');
-    const firstOpenFocusId = focusTasks.find(t => statusOf(t) === 'pending')?.id;
-    const canAddFocus = focusCount < MAX_FOCUS;
+    // The lane only lists what is still pending; finished picks leave it but still count towards progress
+    const pendingFocusTasks = focusTasks.filter(t => statusOf(t) === 'pending');
+    const pendingFocusSteps = focusSteps.filter(f => f.step.status !== 'done');
+    const pendingFocusIds = new Set(pendingFocusTasks.map(t => t.id));
 
-    const rest = tasks.filter(t => !focusIds.has(t.id));
+    const focusTotal = focusTasks.length + focusSteps.length;
+    const focusPending = pendingFocusTasks.length + pendingFocusSteps.length;
+    const focusResolved = focusTotal - focusPending;
+    const focusComplete = focusTotal > 0 && focusPending === 0;
+    const firstOpenFocusId = pendingFocusTasks[0]?.id;
+
+    // Tasks not waiting in the lane; a finished Focus task lands in Done like any other
+    const rest = tasks.filter(t => !pendingFocusIds.has(t.id));
     const pendingRest = rest.filter(t => statusOf(t) === 'pending');
     const doneRest = rest.filter(t => statusOf(t) === 'done');
 
     // Focus mode: park everything else until the Focus items are finished (or you peek)
-    const hideRest = focusMode && focusCount > 0 && !focusResolved && !showRest;
+    const hideRest = focusMode && focusPending > 0 && !showRest;
 
     const withoutStepFocus = (steps: SubStep[]): SubStep[] =>
         steps.map(s => {
@@ -69,15 +70,11 @@ export const DailyCoreList: React.FC<DailyCoreListProps> = ({ tasks, allDue, dat
             return;
         }
         // Focusing the whole task absorbs any of its own steps that were already in the lane
-        const absorbed = task.subSteps.filter(s => s.focusDate === date).length;
-        if (focusCount - absorbed < MAX_FOCUS) {
-            updateTask(task.id, {
-                focusDate: date,
-                ...(absorbed > 0 ? { subSteps: withoutStepFocus(task.subSteps) } : {}),
-            });
-        } else {
-            toast.error(`Focus is full — remove one first (max ${MAX_FOCUS})`);
-        }
+        const hasFocusedSteps = task.subSteps.some(s => s.focusDate === date);
+        updateTask(task.id, {
+            focusDate: date,
+            ...(hasFocusedSteps ? { subSteps: withoutStepFocus(task.subSteps) } : {}),
+        });
     };
 
     const setStepFocus = (task: Task, step: SubStep, focused: boolean) => {
@@ -91,11 +88,7 @@ export const DailyCoreList: React.FC<DailyCoreListProps> = ({ tasks, allDue, dat
         });
     };
 
-    const toggleStepFocus = (task: Task, step: SubStep) => {
-        if (step.focusDate === date) setStepFocus(task, step, false);
-        else if (canAddFocus) setStepFocus(task, step, true);
-        else toast.error(`Focus is full — remove one first (max ${MAX_FOCUS})`);
-    };
+    const toggleStepFocus = (task: Task, step: SubStep) => setStepFocus(task, step, step.focusDate !== date);
 
     const renderRow = (task: Task, defaultExpanded = false) => (
         <TaskRow
@@ -103,14 +96,13 @@ export const DailyCoreList: React.FC<DailyCoreListProps> = ({ tasks, allDue, dat
             task={task}
             onEdit={onEdit}
             isFocus={focusIds.has(task.id)}
-            canAddFocus={canAddFocus}
             onToggleFocus={() => toggleFocus(task)}
             onToggleStepFocus={(step) => toggleStepFocus(task, step)}
             defaultExpanded={defaultExpanded}
         />
     );
 
-    if (tasks.length === 0 && focusCount === 0) {
+    if (tasks.length === 0 && focusTotal === 0) {
         return (
             <div className="flex h-full flex-col justify-center rounded-2xl border border-dashed border-slate-200 px-6 py-12 text-center dark:border-slate-700">
                 <p className="font-medium text-slate-500 dark:text-slate-400">{emptyMessage}</p>
@@ -122,40 +114,45 @@ export const DailyCoreList: React.FC<DailyCoreListProps> = ({ tasks, allDue, dat
         <div className="space-y-5">
             {/* ── Focus lane ── */}
             <section aria-label="Today's Focus" className="space-y-2.5 rounded-3xl border border-primary/30 bg-primary/5 p-3 dark:bg-primary/10">
-                <header className="flex items-center justify-between px-1">
+                <header className="flex items-center justify-between gap-3 px-1">
                     <div className="flex items-center gap-2">
                         <Target className="h-4 w-4 text-primary" />
                         <h3 className="text-sm font-extrabold uppercase tracking-widest text-primary">Focus</h3>
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                            {focusDone}/{focusCount || MAX_FOCUS}
-                        </span>
+                        {focusTotal > 0 && (
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                                {focusResolved}/{focusTotal}
+                            </span>
+                        )}
                     </div>
-                    <div className="flex items-center gap-1.5" aria-hidden>
-                        {Array.from({ length: MAX_FOCUS }, (_, i) => (
-                            <span
-                                key={i}
-                                className={cn(
-                                    'h-2.5 w-2.5 rounded-full border-2',
-                                    i < focusDone
-                                        ? 'border-emerald-500 bg-emerald-500'
-                                        : i < focusCount
-                                            ? 'border-primary bg-primary'
-                                            : 'border-slate-300 dark:border-slate-600'
-                                )}
+                    {focusTotal > 0 && (
+                        <div
+                            className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700"
+                            role="progressbar"
+                            aria-label="Focus progress"
+                            aria-valuemin={0}
+                            aria-valuemax={focusTotal}
+                            aria-valuenow={focusResolved}
+                        >
+                            <div
+                                className={cn('h-full rounded-full transition-[width] duration-500', focusComplete ? 'bg-emerald-500' : 'bg-primary')}
+                                style={{ width: `${(focusResolved / focusTotal) * 100}%` }}
                             />
-                        ))}
-                    </div>
+                        </div>
+                    )}
                 </header>
 
-                {focusCount === 0 ? (
+                {focusTotal === 0 && (
                     <p className="rounded-2xl border border-dashed border-primary/30 px-4 py-5 text-center text-sm text-slate-500 dark:text-slate-400">
-                        Pick up to {MAX_FOCUS} tasks — or single sub-steps — to focus on today. Tap the ☆ on a task, or open it and tap the ☆ on a step.
+                        Tap the ☆ on tasks — or on single sub-steps inside an open task — to focus on them today.
+                        Only what's still pending shows up here.
                     </p>
-                ) : (
+                )}
+
+                {focusPending > 0 && (
                     <>
                         {/* Work on one at a time: only the first unfinished Focus task starts open */}
-                        {focusTasks.map(t => renderRow(t, t.id === firstOpenFocusId))}
-                        {focusSteps.map(({ task, step }) => (
+                        {pendingFocusTasks.map(t => renderRow(t, t.id === firstOpenFocusId))}
+                        {pendingFocusSteps.map(({ task, step }) => (
                             <FocusStepRow
                                 key={`${task.id}:${step.id}`}
                                 task={task}
@@ -167,8 +164,8 @@ export const DailyCoreList: React.FC<DailyCoreListProps> = ({ tasks, allDue, dat
                     </>
                 )}
 
-                {focusResolved && (
-                    <p className="px-1 text-center text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                {focusComplete && (
+                    <p className="px-1 py-1 text-center text-sm font-bold text-emerald-600 dark:text-emerald-400">
                         Focus complete — nice work! 🎉
                     </p>
                 )}
@@ -191,7 +188,7 @@ export const DailyCoreList: React.FC<DailyCoreListProps> = ({ tasks, allDue, dat
                                 <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
                                     Core · {pendingRest.length} left
                                 </h3>
-                                {focusMode && showRest && !focusResolved && (
+                                {focusMode && showRest && focusPending > 0 && (
                                     <button
                                         onClick={() => setShowRest(false)}
                                         className="text-xs font-bold text-slate-400 hover:text-primary"
