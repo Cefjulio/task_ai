@@ -1,17 +1,16 @@
 import toast from 'react-hot-toast';
 import { Task } from '@/types/Task';
 import { useTasks } from '@/hooks/useTasks';
-import { triggerConfetti, playApplause } from '@/utils/soundEffects';
+import { celebrate } from '@/utils/celebrate';
 
 /** Done / skip (with undo) / reopen for a task on the selected date — shared by the card and the compact row. */
 export const useTaskStatusActions = (task: Task) => {
     const { markTaskStatus } = useTasks();
 
-    const complete = () => {
+    /** `origin` is the button that was pressed, so the celebration bursts from it. */
+    const complete = (origin?: Element | null) => {
         markTaskStatus(task.id, 'done');
-        triggerConfetti();
-        playApplause();
-        toast.success('Task Completed! 🎉', { id: task.id });
+        celebrate('task', origin);
     };
 
     const skip = () => {

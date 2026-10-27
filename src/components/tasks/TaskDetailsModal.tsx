@@ -3,7 +3,7 @@ import { Task } from '@/types/Task';
 import { getTaskProgress, getTaskStepStats } from '@/utils/taskHelpers';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { SubStepItem } from './SubStepItem';
-import { useTasks } from '@/hooks/useTasks';
+import { useSubStepToggle } from '@/hooks/useSubStepToggle';
 import { X, Repeat } from 'lucide-react';
 import { GoalBadge } from './GoalBadge';
 import { isQuillEmpty } from '@/utils/htmlUtils';
@@ -17,7 +17,7 @@ interface TaskDetailsModalProps {
 }
 
 export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, task }) => {
-    const { toggleSubStep } = useTasks();
+    const toggleStep = useSubStepToggle();
     if (!isOpen) return null;
 
     const progress = getTaskProgress(task);
@@ -76,7 +76,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onCl
                                     <SubStepItem
                                         key={step.id}
                                         step={step}
-                                        onToggle={() => toggleSubStep(task.id, step.id)}
+                                        onToggle={(el) => toggleStep(task, step, el)}
                                     />
                                 ))}
                             </div>

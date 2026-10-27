@@ -1,18 +1,21 @@
 import React from 'react';
 import { SubStep, Task } from '@/types/Task';
 import { cn } from '@/components/ui/Button';
+import { useJustCompleted } from '@/hooks/useJustCompleted';
 import { Check, Star } from 'lucide-react';
 
 interface FocusStepRowProps {
     task: Task;
     step: SubStep;
-    onToggleStep: () => void;
+    /** Receives the tick button, so the celebration can burst from it. */
+    onToggleStep: (origin?: HTMLElement | null) => void;
     onRemove: () => void;
 }
 
 /** A single sub-step sitting in the Focus lane, with the task it belongs to underneath. */
 export const FocusStepRow: React.FC<FocusStepRowProps> = ({ task, step, onToggleStep, onRemove }) => {
     const isDone = step.status === 'done';
+    const justDone = useJustCompleted(isDone);
 
     return (
         <div
@@ -24,11 +27,12 @@ export const FocusStepRow: React.FC<FocusStepRowProps> = ({ task, step, onToggle
             )}
         >
             <button
-                onClick={onToggleStep}
+                onClick={(e) => onToggleStep(e.currentTarget)}
                 aria-label={isDone ? 'Mark step as not done' : 'Mark step as done'}
                 title={isDone ? 'Done — click to undo' : 'Mark step as done'}
                 className={cn(
                     'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:scale-110 active:scale-95',
+                    justDone && 'check-pop',
                     isDone
                         ? 'border-amber-500 bg-amber-500 text-white'
                         : 'border-slate-300 text-transparent hover:border-primary hover:text-primary/40 dark:border-slate-600'

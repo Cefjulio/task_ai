@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { SubStep, Task } from '@/types/Task';
 import { useTasks } from '@/hooks/useTasks';
+import { useSubStepToggle } from '@/hooks/useSubStepToggle';
 import { useDynamicViewStore } from '@/store/dynamicViewStore';
+import { useStreakStore } from '@/store/streakStore';
+import { celebrateMilestone } from '@/utils/celebrate';
 import { getTaskStatusForDate } from '@/utils/taskHelpers';
 import { cn } from '@/components/ui/Button';
 import { TaskRow } from './TaskRow';
@@ -18,12 +22,17 @@ interface DailyCoreListProps {
     emptyMessage: string;
 }
 
+/** A finished row swooshes off to the right before the list closes the gap. */
+const EXIT = { opacity: 0, x: 48, scale: 0.97 };
+const EXIT_TRANSITION = { duration: 0.25 };
+
 /**
  * Daily Core as: a Focus lane (any number of tasks / single steps, only the still-pending ones are listed)
  * → the remaining tasks as compact rows → a collapsed Done list.
  */
 export const DailyCoreList: React.FC<DailyCoreListProps> = ({ tasks, allDue, date, onEdit, emptyMessage }) => {
-    const { updateTask, toggleSubStep } = useTasks();
+    const { updateTask } = useTasks();
+    const toggleStep = useSubStepToggle();
     const focusMode = useDynamicViewStore(s => s.focusMode);
     const [showRest, setShowRest] = useState(false);
     const [showDone, setShowDone] = useState(false);
@@ -56,6 +65,21 @@ export const DailyCoreList: React.FC<DailyCoreListProps> = ({ tasks, allDue, dat
 
     // Focus mode: park everything else until the Focus items are finished (or you peek)
     const hideRest = focusMode && focusPending > 0 && !showRest;
+
+    // The big moments: the Focus lane emptied, or the whole Daily Core cleared
+    const coreCleared = focusPending === 0 && pendingRest.length === 0 && (doneRest.length > 0 || focusTotal > 0);
+    const wasFocusComplete = useRef(focusComplete);
+    const wasCoreCleared = useRef(coreCleared);
+    useEffect(() => {
+        // Only when the user just ticked something — not when data loads in already complete
+        const justTicked = Date.now() - useStreakStore.getState().lastAt < 2500;
+        if (justTicked) {
+            if (coreCleared && !wasCoreCleared.current) celebrateMilestone('Daily Core cleared — amazing day! 🏆');
+            else if (focusComplete && !wasFocusComplete.current) celebrateMilestone('Focus complete — nice work! 🎉');
+        }
+        wasFocusComplete.current = focusComplete;
+        wasCoreCleared.current = coreCleared;
+    }, [focusComplete, coreCleared]);
 
     const withoutStepFocus = (steps: SubStep[]): SubStep[] =>
         steps.map(s => {
@@ -148,28 +172,47 @@ export const DailyCoreList: React.FC<DailyCoreListProps> = ({ tasks, allDue, dat
                     </p>
                 )}
 
-                {focusPending > 0 && (
-                    <>
-                        {/* Work on one at a time: only the first unfinished Focus task starts open */}
-                        {pendingFocusTasks.map(t => renderRow(t, t.id === firstOpenFocusId))}
-                        {pendingFocusSteps.map(({ task, step }) => (
+                <AnimatePresence initial={false}>
+                    {/* Work on one at a time: only the first unfinished Focus task starts open */}
+                    {pendingFocusTasks.map(t => (
+                        <motion.div key={`t:${t.id}`} layout="position" exit={EXIT} transition={EXIT_TRANSITION}>
+                            {renderRow(t, t.id === firstOpenFocusId)}
+                        </motion.div>
+                    ))}
+                    {pendingFocusSteps.map(({ task, step }) => (
+                        <motion.div key={`s:${task.id}:${step.id}`} layout="position" exit={EXIT} transition={EXIT_TRANSITION}>
                             <FocusStepRow
-                                key={`${task.id}:${step.id}`}
                                 task={task}
                                 step={step}
-                                onToggleStep={() => toggleSubStep(task.id, step.id)}
+                                onToggleStep={(el) => toggleStep(task, step, el)}
                                 onRemove={() => setStepFocus(task, step, false)}
                             />
-                        ))}
-                    </>
-                )}
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
 
                 {focusComplete && (
-                    <p className="px-1 py-1 text-center text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                    <motion.p
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 16 }}
+                        className="px-1 py-1 text-center text-sm font-bold text-emerald-600 dark:text-emerald-400"
+                    >
                         Focus complete — nice work! 🎉
-                    </p>
+                    </motion.p>
                 )}
             </section>
+
+            {coreCleared && (
+                <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+                    className="rounded-2xl border border-emerald-300/60 bg-emerald-50 px-4 py-3 text-center text-sm font-extrabold text-emerald-700 dark:border-emerald-700/50 dark:bg-emerald-900/20 dark:text-emerald-300"
+                >
+                    🏆 Daily Core cleared — nothing left for today!
+                </motion.div>
+            )}
 
             {/* ── The rest ── */}
             {hideRest ? (
@@ -197,7 +240,13 @@ export const DailyCoreList: React.FC<DailyCoreListProps> = ({ tasks, allDue, dat
                                     </button>
                                 )}
                             </div>
-                            {pendingRest.map(t => renderRow(t))}
+                            <AnimatePresence initial={false}>
+                                {pendingRest.map(t => (
+                                    <motion.div key={t.id} layout="position" exit={EXIT} transition={EXIT_TRANSITION}>
+                                        {renderRow(t)}
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
                         </section>
                     )}
 

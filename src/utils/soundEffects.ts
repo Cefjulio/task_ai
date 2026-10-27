@@ -133,6 +133,27 @@ export function playPageTurn() {
     }
 }
 
+// Notes climb a pentatonic scale as a streak grows (C D E G A C D E), so every extra completion
+// in a row sounds a little higher and brighter than the last.
+const STREAK_NOTES = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51];
+const streakNote = (combo: number) => STREAK_NOTES[Math.min(Math.max(combo, 1), STREAK_NOTES.length) - 1];
+
+// Quick, soft "pop" for ticking a sub-step
+export function playStepPop(combo = 1) {
+    const f = streakNote(combo);
+    tone(f, 0.12, 'sine', 0.15);
+    tone(f * 2, 0.08, 'sine', 0.05, 0.03);
+}
+
+// Bright two-note "ding" (a fifth apart) for finishing a task, with a sparkle once you're on a roll
+export function playTaskDing(combo = 1) {
+    const f = streakNote(combo);
+    tone(f, 0.22, 'sine', 0.2);
+    tone(f * 1.5, 0.28, 'sine', 0.15, 0.07);
+    tone(f * 2, 0.3, 'triangle', 0.07, 0.14);
+    if (combo >= 3) tone(f * 3, 0.18, 'sine', 0.05, 0.24);
+}
+
 export function playSoftClick() {
     tone(900, 0.05, 'sine', 0.07);
 }

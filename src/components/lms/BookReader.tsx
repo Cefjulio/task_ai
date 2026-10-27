@@ -7,6 +7,7 @@ import { useLmsReaderStore } from '@/store/lmsReaderStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { cn } from '@/components/ui/Button';
 import { shadeHex } from '@/utils/colorUtils';
+import { celebrate } from '@/utils/celebrate';
 import { stripHtml } from '@/utils/htmlUtils';
 import { playLevelUp, playPageTurn, resumeAudio, triggerConfetti } from '@/utils/soundEffects';
 import { BookPage } from './BookPage';
@@ -354,6 +355,8 @@ export const BookReader: React.FC<BookReaderProps> = ({
 
         setLessonStatus(lesson.id, status);
         if (finishesBook) celebrateFinish();
+        // Finishing any other lesson still gets the little burst + streak, shared with the task lists
+        else if (status === 'completed' && lesson.status !== 'completed') celebrate('task');
         return finishesBook;
     };
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTasks } from '@/hooks/useTasks';
 import { DailyCoreList } from '@/components/tasks/DailyCoreList';
+import { StreakChip } from '@/components/tasks/StreakChip';
 import { TaskQueue } from '@/components/tasks/TaskQueue';
 import { QueuedTasksBacklog } from '@/components/tasks/QueuedTasksBacklog';
 import { Task } from '@/types/Task';
@@ -57,6 +58,7 @@ export const DynamicTasksPage: React.FC<{ onEdit: (t: Task) => void }> = ({ onEd
                             <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full shrink-0">
                                 {donePrimary.length}/{dailyCoreTasks.length}
                             </span>
+                            <StreakChip />
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
                             <button

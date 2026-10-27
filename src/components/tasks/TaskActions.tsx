@@ -3,7 +3,8 @@ import { Check, Edit2, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 interface TaskActionsProps {
-    onDone: () => void;
+    /** Receives the pressed button so the celebration can burst from it. */
+    onDone: (origin?: HTMLElement) => void;
     onSkip: () => void;
     onEdit: () => void;
     onDelete: () => void;
@@ -21,7 +22,7 @@ export const TaskActions: React.FC<TaskActionsProps> = ({
         <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
             {!isCompleted && (
                 <>
-                    <Button size="sm" variant="primary" onClick={onDone} className="flex-1 bg-primary text-white gap-1.5 focus:ring-primary h-9">
+                    <Button size="sm" variant="primary" onClick={(e) => onDone(e.currentTarget)} className="flex-1 bg-primary text-white gap-1.5 focus:ring-primary h-9">
                         <Check className="w-4 h-4" /> Done
                     </Button>
                     <Button size="sm" variant="secondary" onClick={onSkip} className="gap-1.5 h-9">
