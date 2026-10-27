@@ -9,8 +9,6 @@ interface SubStepItemProps {
     /** Optional ☆ to put just this step in today's Focus lane. */
     focus?: {
         active: boolean;
-        /** Lane is full and this step isn't in it. */
-        disabled: boolean;
         onToggle: () => void;
     };
 }
@@ -19,9 +17,7 @@ export const SubStepItem: React.FC<SubStepItemProps> = ({ step, onToggle, focus 
     const isDone = step.status === 'done';
     const starLabel = focus?.active
         ? "Remove this step from today's Focus"
-        : focus?.disabled
-            ? 'Focus is full (3) — remove one first'
-            : "Add this step to today's Focus";
+        : "Add this step to today's Focus";
 
     return (
         <div
@@ -61,9 +57,7 @@ export const SubStepItem: React.FC<SubStepItemProps> = ({ step, onToggle, focus 
                         'shrink-0 rounded-lg p-1 transition-colors',
                         focus.active
                             ? 'text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'
-                            : focus.disabled
-                                ? 'cursor-not-allowed text-slate-200 dark:text-slate-700'
-                                : 'text-slate-300 hover:bg-slate-100 hover:text-amber-500 dark:text-slate-600 dark:hover:bg-slate-800'
+                            : 'text-slate-300 hover:bg-slate-100 hover:text-amber-500 dark:text-slate-600 dark:hover:bg-slate-800'
                     )}
                 >
                     <Star className={cn('h-4 w-4', focus.active && 'fill-current')} />
