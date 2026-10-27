@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { SubStep } from '@/types/Task';
 import { cn } from '@/components/ui/Button';
+import { useJustCompleted } from '@/hooks/useJustCompleted';
 import { Check, Star } from 'lucide-react';
 
 interface SubStepItemProps {
     step: SubStep;
-    onToggle: () => void;
+    /** Receives the check circle, so the celebration can burst from it. */
+    onToggle: (origin?: HTMLElement | null) => void;
     /** Optional ☆ to put just this step in today's Focus lane. */
     focus?: {
         active: boolean;
@@ -15,6 +17,8 @@ interface SubStepItemProps {
 
 export const SubStepItem: React.FC<SubStepItemProps> = ({ step, onToggle, focus }) => {
     const isDone = step.status === 'done';
+    const justDone = useJustCompleted(isDone);
+    const circleRef = useRef<HTMLDivElement>(null);
     const starLabel = focus?.active
         ? "Remove this step from today's Focus"
         : "Add this step to today's Focus";
@@ -22,17 +26,18 @@ export const SubStepItem: React.FC<SubStepItemProps> = ({ step, onToggle, focus 
     return (
         <div
             className="flex items-center gap-3 py-2 cursor-pointer group"
-            onClick={onToggle}
+            onClick={() => onToggle(circleRef.current)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
                 // Keys pressed on the ☆ inside belong to the ☆, not to the step
                 if (e.target !== e.currentTarget) return;
-                if (e.key === 'Enter' || e.key === ' ') onToggle();
+                if (e.key === 'Enter' || e.key === ' ') onToggle(circleRef.current);
             }}
         >
-            <div className={cn(
+            <div ref={circleRef} className={cn(
                 "flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-colors",
+                justDone && "check-pop",
                 isDone
                     ? "bg-primary border-primary text-white"
                     : "border-slate-300 dark:border-slate-600 text-transparent group-hover:border-primary/50"

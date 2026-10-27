@@ -5,6 +5,8 @@ import { stripHtml } from '@/utils/htmlUtils';
 import { useTasks } from '@/hooks/useTasks';
 import { useTaskStore } from '@/store/taskStore';
 import { useTaskStatusActions } from '@/hooks/useTaskStatusActions';
+import { useSubStepToggle } from '@/hooks/useSubStepToggle';
+import { useJustCompleted } from '@/hooks/useJustCompleted';
 import { cn } from '@/components/ui/Button';
 import { TaskActions } from './TaskActions';
 import { SubStepItem } from './SubStepItem';
@@ -23,7 +25,8 @@ interface TaskRowProps {
 
 /** One-line task: tick it off, see its step progress, or expand it to work through the sub-steps. */
 export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, onToggleFocus, onToggleStepFocus, defaultExpanded = false }) => {
-    const { toggleSubStep, deleteTask } = useTasks();
+    const { deleteTask } = useTasks();
+    const toggleStep = useSubStepToggle();
     const { selectedDate, tags: allTags } = useTaskStore();
     const { complete, skip, reopen } = useTaskStatusActions(task);
     const [expanded, setExpanded] = useState(defaultExpanded);
@@ -31,6 +34,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, onToggl
     const status = getTaskStatusForDate(task, selectedDate);
     const isDone = status === 'done';
     const isSkipped = status === 'skipped';
+    const justDone = useJustCompleted(isDone);
     const stats = getTaskStepStats(task);
     const progress = getTaskProgress(task);
     const taskTags = (task.tags || []).map(id => allTags.find(t => t.id === id)).filter(Boolean);
@@ -54,11 +58,12 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, onToggl
         >
             <div className="flex items-center gap-2.5 px-3 py-2.5">
                 <button
-                    onClick={isDone || isSkipped ? reopen : complete}
+                    onClick={(e) => (isDone || isSkipped ? reopen() : complete(e.currentTarget))}
                     aria-label={isDone ? 'Mark as not done' : isSkipped ? 'Reopen skipped task' : 'Mark as done'}
                     title={isDone ? 'Done — click to undo' : isSkipped ? 'Skipped — click to reopen' : 'Mark as done'}
                     className={cn(
                         'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:scale-110 active:scale-95',
+                        justDone && 'check-pop',
                         isDone
                             ? 'border-amber-500 bg-amber-500 text-white'
                             : isSkipped
@@ -160,7 +165,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, onEdit, isFocus, onToggl
                                     <SubStepItem
                                         key={step.id}
                                         step={step}
-                                        onToggle={() => toggleSubStep(task.id, step.id)}
+                                        onToggle={(el) => toggleStep(task, step, el)}
                                         focus={showStar ? {
                                             active: stepInFocus,
                                             onToggle: () => onToggleStepFocus(step),
