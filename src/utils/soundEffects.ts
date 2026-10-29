@@ -154,6 +154,33 @@ export function playTaskDing(combo = 1) {
     if (combo >= 3) tone(f * 3, 0.18, 'sine', 0.05, 0.24);
 }
 
+// A soft bell for a daily reminder arriving
+export function playReminderChime() {
+    tone(659.25, 0.9, 'sine', 0.15);
+    tone(987.77, 1.1, 'sine', 0.09, 0.12);
+    tone(1318.51, 1.2, 'sine', 0.05, 0.26);
+}
+
+// A playful rising "ta-da" for today's study picks arriving
+export function playStudyReady() {
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, 0.2, 'triangle', 0.12, i * 0.08));
+    tone(1568, 0.35, 'sine', 0.06, 0.36);
+}
+
+// Three rising notes + a sparkle for acknowledging a reminder
+export function playAcknowledge() {
+    tone(523.25, 0.14, 'sine', 0.18);
+    tone(783.99, 0.14, 'sine', 0.18, 0.09);
+    tone(1046.5, 0.35, 'sine', 0.2, 0.18);
+    tone(2093, 0.18, 'sine', 0.06, 0.3);
+}
+
+// Two gentle falling notes for snoozing
+export function playSnooze() {
+    tone(783.99, 0.16, 'sine', 0.13);
+    tone(587.33, 0.3, 'sine', 0.11, 0.12);
+}
+
 export function playSoftClick() {
     tone(900, 0.05, 'sine', 0.07);
 }

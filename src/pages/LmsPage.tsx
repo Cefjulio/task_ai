@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavStore } from '@/store/navStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLmsStore } from '@/store/lmsStore';
 import { Course, Lesson } from '@/types/Lms';
@@ -21,6 +22,15 @@ export const LmsPage: React.FC = () => {
     const [focusLessonId, setFocusLessonId] = useState<string | null>(null);
     const [isCourseModalOpen, setCourseModalOpen] = useState(false);
     const [courseToEdit, setCourseToEdit] = useState<Course | null>(null);
+
+    // Open a specific book/lesson when asked from elsewhere (e.g. the daily study modal)
+    const navRequest = useNavStore(s => s.request);
+    useEffect(() => {
+        if (!navRequest?.courseId || !courses.some(c => c.id === navRequest.courseId)) return;
+        setSelectedCourseId(navRequest.courseId);
+        setFocusLessonId(navRequest.lessonId ?? null);
+        useNavStore.getState().clear();
+    }, [navRequest, courses]);
 
     const categories = useMemo(
         () => Array.from(new Set(courses.map(c => c.category).filter(Boolean))),

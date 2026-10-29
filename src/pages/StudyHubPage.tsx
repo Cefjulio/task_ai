@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavStore } from '@/store/navStore';
 import { StudyListPage } from './StudyListPage';
 import { LmsPage } from './LmsPage';
 import { StudyListFormModal } from '@/components/study/StudyListFormModal';
@@ -9,7 +10,13 @@ import { Dices, GraduationCap, Plus } from 'lucide-react';
 type StudySubTab = 'roulette' | 'lms';
 
 export const StudyHubPage: React.FC = () => {
-    const [subTab, setSubTab] = useState<StudySubTab>('roulette');
+    const [subTab, setSubTab] = useState<StudySubTab>(() => useNavStore.getState().request?.studySubTab ?? 'roulette');
+
+    // Jump to a sub-tab when something else asks for it (e.g. "Open in book" from the daily study modal)
+    const navRequest = useNavStore(s => s.request);
+    useEffect(() => {
+        if (navRequest?.studySubTab) setSubTab(navRequest.studySubTab);
+    }, [navRequest]);
     const [isStudyModalOpen, setStudyModalOpen] = useState(false);
     const [studyItemToEdit, setStudyItemToEdit] = useState<StudyItem | null>(null);
 

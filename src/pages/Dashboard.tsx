@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GlobalStats } from '@/components/dashboard/GlobalStats';
 import { Tabs, TabType } from '@/components/dashboard/Tabs';
 import { ThemeToggle } from '@/components/dashboard/ThemeToggle';
@@ -17,12 +17,20 @@ import { StudyHubPage } from './StudyHubPage';
 import { ReadingPage } from './ReadingPage';
 import { GoalsPage } from './GoalsPage';
 import { HealthPage } from './HealthPage';
+import { DailyOrchestrator } from '@/components/daily/DailyOrchestrator';
+import { useNavStore } from '@/store/navStore';
 
 export const Dashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('goals');
     const [isModalOpen, setModalOpen] = useState(false);
     const [isTagsModalOpen, setTagsModalOpen] = useState(false);
     const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+
+    // "Take me there" requests from elsewhere (e.g. the daily study modal)
+    const navRequest = useNavStore(s => s.request);
+    useEffect(() => {
+        if (navRequest?.tab) setActiveTab(navRequest.tab);
+    }, [navRequest]);
 
     const handleEdit = (task: Task) => {
         setTaskToEdit(task);
@@ -146,6 +154,9 @@ export const Dashboard: React.FC = () => {
                 isOpen={isTagsModalOpen}
                 onClose={() => setTagsModalOpen(false)}
             />
+
+            {/* Daily goal/plan reminder + daily study picks */}
+            <DailyOrchestrator />
         </div>
     );
 };
